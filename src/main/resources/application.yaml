@@ -1,0 +1,5 @@
+
+openweathermap:
+  api:
+    key: 955a47a1c603db0ddcd1c3551277baa5
+    host: 37.139.1.159 #api.openweathermap.org

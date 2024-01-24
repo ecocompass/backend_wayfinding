@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mapengine-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mapengine
+  template:
+    metadata:
+      labels:
+        app: mapengine
+    spec:
+      containers:
+        - name: mapengine-container
+          image: mapengine-docker-image-0
+          ports:
+            - containerPort: 8080
