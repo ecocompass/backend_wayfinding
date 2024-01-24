@@ -20,12 +20,14 @@ To start cloning and Gradle Build, you will need to follow the following steps:
 
 ### Postman Testing (LocalHost testing):
 
-Request
+Request:
+
 curl --location 'http://0.0.0.0:8080/hello' \
 --header 'Content-Type: application/json' \
 --data '{"latitude": 37.7749, "longitude": -122.4194}' 
 
-Response
+Response:
+
 Hello World! Response from MapEngine! Received coordinates: Latitude 37.7749, Longitude -122.4194, OpenWeatherMap Response: City: San Francisco, Country: US, Temperature: 11.18°C, Weather Description: overcast clouds Nearest DART Stations: Malahide: 53.4509, -6.15649 Portmarnock: 53.4169, -6.1512 Dublin Connolly: 53.3531, -6.24591 
 
 You can also do a local build of Java Gradle Project before doing a docker build to check for any issues while building the project.
