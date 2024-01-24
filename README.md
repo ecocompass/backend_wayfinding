@@ -1,5 +1,6 @@
 # backend_wayfinding
-Back-end of the app
+Back-end of the app.
+
 This is a Java Gradle project. And was developed using intelliJ IDEA editor (https://www.jetbrains.com/help/idea/getting-started-with-gradle.html).
 
 # Getting Started
