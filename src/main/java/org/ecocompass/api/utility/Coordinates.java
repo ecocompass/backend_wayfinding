@@ -1,4 +1,4 @@
-package org.example.utility;
+package org.ecocompass.api.utility;
 
 public class Coordinates {
     private double latitude;

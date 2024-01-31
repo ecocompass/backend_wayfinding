@@ -1,7 +1,7 @@
-package org.example.controller;
+package org.ecocompass.api.controller;
 
 import com.jayway.jsonpath.JsonPath;
-import org.example.utility.Coordinates;
+import org.ecocompass.api.utility.Coordinates;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +22,6 @@ import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
