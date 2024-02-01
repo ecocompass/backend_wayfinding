@@ -4,6 +4,11 @@ public class Coordinates {
     private double latitude;
     private double longitude;
 
+    public Coordinates(double lat, double longs) {
+        latitude = lat;
+        longitude = longs;
+    }
+
     // getters and setters
 
     public double getLatitude() {
