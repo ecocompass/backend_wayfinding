@@ -26,7 +26,7 @@ public class OverpassEdge {
             this.type = type;
         }
 
-        // calculateDistance(); // TODO: fix - function logic fails currently.
+         calculateDistance();
     }
 
     private void calculateDistance() {

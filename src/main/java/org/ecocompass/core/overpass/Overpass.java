@@ -104,7 +104,7 @@ public class Overpass {
                 Long lastRef = null;
 
                 for (int j = 0; j < nodesArray.length(); j++) {
-                    Long nodeID = nodesArray.optLongObject(i);
+                    Long nodeID = nodesArray.getLong(j);
                     if (lastRef != null) {
                         edges.add(new OverpassEdge(nodes.get(lastRef), nodes.get(nodeID), "road"));
                     }
