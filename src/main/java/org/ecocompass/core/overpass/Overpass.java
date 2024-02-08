@@ -1,6 +1,8 @@
 package org.ecocompass.core.overpass;
 
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.ecocompass.core.graph.Graph;
+import org.ecocompass.core.graph.Node;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -79,9 +81,11 @@ public class Overpass {
         return new String(data, StandardCharsets.UTF_8);
     }
 
-    public void parseQueryOutput(String data, Map<Long, OverpassNode> nodes, List<OverpassEdge> edges) throws Exception {
+    public Graph createGraphFromOverpassQuery(String data) throws Exception {
         JSONObject parsedJSON = new JSONObject(data);
         JSONArray elementsArray = parsedJSON.getJSONArray("elements");
+
+        Graph graph = new Graph();
 
         for (int i = 0; i < elementsArray.length(); i++) {
             JSONObject element = elementsArray.getJSONObject(i);
@@ -90,14 +94,7 @@ public class Overpass {
                 Long nodeID = element.getLong("id");
                 double lat = element.getDouble("lat");
                 double lon = element.getDouble("lon");
-
-                ArrayList<String> typesList = new ArrayList<>() {{
-                    add("road");
-                    add("walk");
-                    add("cycle");
-                }};
-
-                nodes.put(nodeID, new OverpassNode(lat, lon, typesList));
+                graph.addNode(nodeID, lat, lon);
 
             } else if (Objects.equals(element.getString("type"), "way")) {
                 JSONArray nodesArray = element.getJSONArray("nodes");
@@ -106,11 +103,13 @@ public class Overpass {
                 for (int j = 0; j < nodesArray.length(); j++) {
                     Long nodeID = nodesArray.getLong(j);
                     if (lastRef != null) {
-                        edges.add(new OverpassEdge(nodes.get(lastRef), nodes.get(nodeID), "road"));
+                        graph.addEdge(nodeID, lastRef, "road");
                     }
                     lastRef = nodeID;
                 }
             }
         }
+
+        return graph;
     }
 }
