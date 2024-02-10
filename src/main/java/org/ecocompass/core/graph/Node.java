@@ -68,4 +68,13 @@ public class Node {
             }
         }
     }
+
+    void printDetails(){
+        System.out.printf("GPS: (%f, %f)\n", this.latitude, this.longitude);
+        System.out.println("Road neighbors:");
+
+        for (Neighbor nei : this.neighbors.get("road")) {
+            System.out.printf("   - %d\n", nei.nodeId);
+        }
+    }
 }
