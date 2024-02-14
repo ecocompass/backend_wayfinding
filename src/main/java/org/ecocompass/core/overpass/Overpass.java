@@ -35,7 +35,7 @@ public class Overpass {
     public String queryLocation(String country, String city, String neighborhood) {
         String queryTemplate = "[out:json];area[\"ISO3166-1:alpha2\"=\"%s\"]->.country;area[\"admin_level\"=\"7\"]"
             + "[\"name\"=\"%s\"]->.city;area[\"name\"=\"%s\"]->.nei;"
-            + "(way(area.country)(area.city)[highway];>;);out body;";
+            + "(way(area.country)(area.city)(area.nei)[highway];>;);out body;";
 
         String queryString = String.format(queryTemplate, country, city, neighborhood);
         System.out.println("SENDING REQUEST TO: " + overpassUrl);
