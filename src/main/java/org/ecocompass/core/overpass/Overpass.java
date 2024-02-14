@@ -1,6 +1,8 @@
 package org.ecocompass.core.overpass;
 
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.ecocompass.core.K_DTree.KDTree;
+import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
 import org.json.JSONArray;
@@ -33,7 +35,7 @@ public class Overpass {
     public String queryLocation(String country, String city, String neighborhood) {
         String queryTemplate = "[out:json];area[\"ISO3166-1:alpha2\"=\"%s\"]->.country;area[\"admin_level\"=\"7\"]"
             + "[\"name\"=\"%s\"]->.city;area[\"name\"=\"%s\"]->.nei;"
-            + "(way(area.country)(area.city)(area.nei)[highway];>;);out body;";
+            + "(way(area.country)(area.city)[highway];>;);out body;";
 
         String queryString = String.format(queryTemplate, country, city, neighborhood);
         System.out.println("SENDING REQUEST TO: " + overpassUrl);
@@ -112,4 +114,21 @@ public class Overpass {
 
         return graph;
     }
+
+    public KDTree createTreeFromGraph(Graph graph) {
+
+        KDTree tree = new KDTree();
+
+        List<Node> allNodes = graph.getAllNodes();
+
+        for (Node node : allNodes) {
+            double[] coordinates = {node.latitude, node.longitude};
+            KdNode kdNode = new KdNode(coordinates, node);
+            tree.insert(kdNode,0);
+        }
+
+
+        return tree;
+    }
+
 }

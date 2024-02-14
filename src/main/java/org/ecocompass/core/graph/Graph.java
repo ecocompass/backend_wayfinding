@@ -34,6 +34,10 @@ public class Graph {
         node2.addNeighbor(transportType, node1Id, distance);
     }
 
+    public List<Node> getAllNodes() {
+        return new ArrayList<>(nodes.values());
+    }
+
     private double calculateDistance(Node node1, Node node2) {
         double latDistance = Math.toRadians(node2.latitude - node1.latitude);
         double lonDistance = Math.toRadians(node2.longitude - node1.longitude);
