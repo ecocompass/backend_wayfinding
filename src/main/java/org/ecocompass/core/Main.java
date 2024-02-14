@@ -13,9 +13,9 @@ public class Main {
         System.out.println("Ecocompass Core Engine");
 
         Overpass overpass = new Overpass();
-        String response = overpass.queryLocation("IE", "Dublin", "Rathmines");
-        overpass.saveQueryOutput(response, "query_data.json");
-        //String response = overpass.loadSavedQueryOutput("query_data.json");
+//         String response = overpass.queryLocation("IE", "Dublin", "Rathmines");
+//         overpass.saveQueryOutput(response, "query_data.json");
+        String response = overpass.loadSavedQueryOutput("query_data.json");
 
         Graph graph =  overpass.createGraphFromOverpassQuery(response);
 
