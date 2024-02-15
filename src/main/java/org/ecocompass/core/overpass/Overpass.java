@@ -1,6 +1,8 @@
 package org.ecocompass.core.overpass;
 
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.ecocompass.core.K_DTree.KDTree;
+import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
 import org.json.JSONArray;
@@ -128,4 +130,21 @@ public class Overpass {
 
         return graph;
     }
+
+    public KDTree createTreeFromGraph(Graph graph) {
+
+        KDTree tree = new KDTree();
+
+        List<Node> allNodes = graph.getAllNodes();
+
+        for (Node node : allNodes) {
+            double[] coordinates = {node.latitude, node.longitude};
+            KdNode kdNode = new KdNode(coordinates, node);
+            tree.insert(kdNode,0);
+        }
+
+
+        return tree;
+    }
+
 }
