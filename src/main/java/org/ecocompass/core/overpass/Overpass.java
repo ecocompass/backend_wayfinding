@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
@@ -18,8 +17,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,12 +27,31 @@ public class Overpass {
     public Overpass() {
         client = HttpClient.newHttpClient();
     }
-    public String queryLocation(String country, String city, String neighborhood) {
-        String queryTemplate = "[out:json];area[\"ISO3166-1:alpha2\"=\"%s\"]->.country;area[\"admin_level\"=\"7\"]"
-            + "[\"name\"=\"%s\"]->.city;area[\"name\"=\"%s\"]->.nei;"
-            + "(way(area.country)(area.city)(area.nei)[highway];>;);out body;";
+    public String queryLocation(Map<String, String> geoMap) {
+        String varsString = "";
+        String geofilterString = "(way";
 
-        String queryString = String.format(queryTemplate, country, city, neighborhood);
+        if (geoMap.containsKey("country")) {
+            varsString += String.format("area[\"ISO3166-1:alpha2\"=\"%s\"]->.country;", geoMap.get("country"));
+            geofilterString += "(area.country)";
+        }
+
+        if (geoMap.containsKey("county")) {
+            varsString += String.format("area[\"admin_level\"=\"6\"][\"name\"=\"%s\"]->.county;", geoMap.get("county"));
+            geofilterString += "(area.county)";
+        }
+
+        if (geoMap.containsKey("city")) {
+            varsString += String.format("area[\"admin_level\"=\"7\"][\"name\"=\"%s\"]->.city;", geoMap.get("city"));
+            geofilterString += "(area.city)";
+        }
+
+        if (geoMap.containsKey("neighborhood")) {
+            varsString += String.format("area[\"name\"=\"%s\"]->.county;", geoMap.get("neighborhood"));
+            geofilterString += "(area.neighborhood)";
+        }
+
+        String queryString = "[out:json];" + varsString + geofilterString + "[highway];>;);out body;";
         System.out.println("SENDING REQUEST TO: " + overpassUrl);
         System.out.println("QUERY STRING\n" + queryString);
         String encodedQueryString = URLEncoder.encode(queryString, Charset.defaultCharset());
