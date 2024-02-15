@@ -2,6 +2,7 @@ package org.ecocompass.api.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import org.ecocompass.api.utility.Coordinates;
+import org.ecocompass.api.utility.Station;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -71,7 +72,7 @@ public class HelloController {
         // Add nearest DART stations to the response
         customResponseBuilder.append(" Nearest DART Stations: ");
         for (Station station : nearestStations) {
-            customResponseBuilder.append(station.stationDesc).append(": ").append(station.latitude).append(", ").append(station.longitude).append(" ");
+            customResponseBuilder.append(station.getStationDesc()).append(": ").append(station.getLatitude()).append(", ").append(station.getLongitude()).append(" ");
         }
 
         String customResponse = customResponseBuilder.toString();
@@ -80,7 +81,7 @@ public class HelloController {
                 ", Longitude " + currentLongitude + ", OpenWeatherMap Response: " + customResponse;
     }
 
-    private List<Station> findNearestDARTStations(double currentLatitude, double currentLongitude, int numStations) throws IOException {
+    public List<Station> findNearestDARTStations(double currentLatitude, double currentLongitude, int numStations) throws IOException {
         // Make a request to the DART API to get the station information
         String dartApiUrl = "http://api.irishrail.ie/realtime/realtime.asmx/getAllStationsXML_WithStationType?StationType=D";
         URL url = new URL(dartApiUrl);
@@ -101,11 +102,11 @@ public class HelloController {
 
             // Calculate distances and sort the stations based on distance
             for (Station station : dartStations) {
-                double distance = calculateDistance(currentLatitude, currentLongitude, station.latitude, station.longitude);
-                station.distance = distance;
+                double distance = calculateDistance(currentLatitude, currentLongitude, station.getLatitude(), station.getLongitude());
+                station.setDistance(distance);
             }
 
-            dartStations.sort(Comparator.comparingDouble(s -> s.distance));
+            dartStations.sort(Comparator.comparingDouble(Station::getDistance));
 
             // Get the nearest stations
             List<Station> nearestStations = new ArrayList<>();
@@ -179,23 +180,6 @@ public class HelloController {
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        // Calculate the distance
-        double distance = R * c;
-
-        return distance;
-    }
-
-
-    static class Station {
-        String stationDesc;
-        double latitude;
-        double longitude;
-        double distance; // To store the calculated distance
-
-        public Station(String stationDesc, double latitude, double longitude) {
-            this.stationDesc = stationDesc;
-            this.latitude = latitude;
-            this.longitude = longitude;
-        }
+        return R * c;
     }
 }
