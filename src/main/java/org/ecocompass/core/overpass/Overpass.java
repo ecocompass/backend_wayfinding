@@ -136,11 +136,13 @@ public class Overpass {
 
         KDTree tree = new KDTree();
 
-        List<Node> allNodes = graph.getAllNodes();
+        Map<Long, Node> allNodes = graph.getAllNodes();
 
-        for (Node node : allNodes) {
+        for (Map.Entry<Long, Node> entry : allNodes.entrySet()) {
+            Long nodeID = entry.getKey();
+            Node node = entry.getValue();
             double[] coordinates = {node.latitude, node.longitude};
-            KdNode kdNode = new KdNode(coordinates, node);
+            KdNode kdNode = new KdNode(coordinates, nodeID, node);
             tree.insert(kdNode,0);
         }
 
