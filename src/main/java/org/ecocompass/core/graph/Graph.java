@@ -34,8 +34,8 @@ public class Graph {
         node2.addNeighbor(transportType, node1Id, distance);
     }
 
-    public List<Node> getAllNodes() {
-        return new ArrayList<>(nodes.values());
+    public Map<Long, Node> getAllNodes() {
+        return this.nodes;
     }
 
     private double calculateDistance(Node node1, Node node2) {

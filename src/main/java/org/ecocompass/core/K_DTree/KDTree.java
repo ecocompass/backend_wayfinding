@@ -64,8 +64,8 @@ public class KDTree {
         return candidateNode;
     }
 
-    public KdNode findNearestNeighbor(double[] point) {
-        return nearestNeighbor(root, point, 0, null, Double.MAX_VALUE);
+    public Long findNearestNeighbor(double[] point) {
+        return nearestNeighbor(root, point, 0, null, Double.MAX_VALUE).getNodeID();
     }
 
     private static class NodeWithDistance implements Comparable<NodeWithDistance> {
