@@ -117,17 +117,15 @@ public class Graph {
         return path;
     }
 
-    public JSONArray convertPathToJSON(List<Node> path) {
-        JSONArray jsonArray = new JSONArray();
+    public List<double[]> extractCoordinates(List<Node> nodes) {
+        List<double[]> coordinates = new ArrayList<>();
 
-        for (Node node : path) {
-            JSONArray coordinates = new JSONArray();
-            coordinates.put(node.longitude);
-            coordinates.put(node.latitude);
-            jsonArray.put(coordinates);
+        for (Node node : nodes) {
+            double[] coordinate = {node.longitude, node.latitude};
+            coordinates.add(coordinate);
         }
 
-        return jsonArray;
+        return coordinates;
     }
 
     static class NodeRecord {
