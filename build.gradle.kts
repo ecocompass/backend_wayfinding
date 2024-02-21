@@ -18,6 +18,7 @@ dependencies {
     implementation("com.jayway.jsonpath:json-path:2.6.0")
     implementation("org.json:json:20231013")
     implementation("org.jgrapht:jgrapht-core:1.5.2")
+    implementation("org.projectlombok:lombok:1.18.28")
     runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))

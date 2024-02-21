@@ -1,12 +1,10 @@
 package org.ecocompass.core.overpass;
 
-import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
@@ -19,6 +17,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -134,7 +133,7 @@ public class Overpass {
 
     public KDTree createTreeFromGraph(Graph graph) {
 
-        KDTree tree = new KDTree();
+        List<KdNode> nodes = new ArrayList<>();
 
         Map<Long, Node> allNodes = graph.getAllNodes();
 
@@ -143,11 +142,10 @@ public class Overpass {
             Node node = entry.getValue();
             double[] coordinates = {node.latitude, node.longitude};
             KdNode kdNode = new KdNode(coordinates, nodeID, node);
-            tree.insert(kdNode,0);
+            nodes.add(kdNode);
         }
 
-
-        return tree;
+        return new KDTree(nodes);
     }
 
 }
