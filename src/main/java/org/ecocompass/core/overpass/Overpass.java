@@ -19,6 +19,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -49,7 +50,7 @@ public class Overpass {
         }
 
         if (geoMap.containsKey("neighborhood")) {
-            varsString += String.format("area[\"name\"=\"%s\"]->.county;", geoMap.get("neighborhood"));
+            varsString += String.format("area[\"name\"=\"%s\"]->.neighborhood;", geoMap.get("neighborhood"));
             geofilterString += "(area.neighborhood)";
         }
 
@@ -135,11 +136,13 @@ public class Overpass {
 
         KDTree tree = new KDTree();
 
-        List<Node> allNodes = graph.getAllNodes();
+        Map<Long, Node> allNodes = graph.getAllNodes();
 
-        for (Node node : allNodes) {
+        for (Map.Entry<Long, Node> entry : allNodes.entrySet()) {
+            Long nodeID = entry.getKey();
+            Node node = entry.getValue();
             double[] coordinates = {node.latitude, node.longitude};
-            KdNode kdNode = new KdNode(coordinates, node);
+            KdNode kdNode = new KdNode(coordinates, nodeID, node);
             tree.insert(kdNode,0);
         }
 
