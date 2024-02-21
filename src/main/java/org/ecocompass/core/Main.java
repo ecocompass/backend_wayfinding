@@ -2,33 +2,50 @@ package org.ecocompass.core;
 
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.graph.Graph;
-import org.ecocompass.core.graph.Node;
 import org.ecocompass.core.overpass.Overpass;
-import org.json.JSONArray;
-
-import java.util.List;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.server.ConfigurableWebServerFactory;
+import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.context.annotation.Bean;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 
+@SpringBootApplication
 public class Main {
-    public static void main(String[] args) throws Exception {
-        System.out.println("Ecocompass Core Engine");
-        Overpass overpass = new Overpass();
 
-        String response = overpass.queryLocation(Map.of("country", "IE", "county", "County Dublin", "city", "Dublin"));
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class, args);
+    }
+
+    @Bean
+    public Overpass overpass() {
+        return new Overpass();
+    }
+
+    @Bean
+    public Graph graph(Overpass overpass) throws Exception {
+        String response = overpass.queryLocation(Map.of("country", "IE", "county", "County Dublin"));
+        // "neighborhood", "Grosvenor Square"
         overpass.saveQueryOutput(response, "query_data.json");
-//        String response = overpass.loadSavedQueryOutput("query_data.json");
+        //String response = overpass.loadSavedQueryOutput("query_data.json");
+        return overpass.createGraphFromOverpassQuery(response);
+    }
 
+    @Bean
+    public KDTree kdTree(Graph graph, Overpass overpass) {
+        return overpass.createTreeFromGraph(graph);
+    }
 
-        Graph graph =  overpass.createGraphFromOverpassQuery(response);
-
-        KDTree tree = overpass.createTreeFromGraph(graph);
-        //double[] point = {101234, 12235};
-        //tree.findNearestNeighbor(point);
-
-        // grosvenor square to trinity
-        List<Node> route = graph.shortestPath(59802249L, 2414635995L, "road");
-
-        JSONArray routeJSON = graph.convertPathToJSON(route);
-        System.out.println(routeJSON);
+    @Bean
+    public WebServerFactoryCustomizer<ConfigurableWebServerFactory> webServerFactoryCustomizer() {
+        return factory -> {
+            try {
+                factory.setAddress(InetAddress.getByName("0.0.0.0"));
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }
