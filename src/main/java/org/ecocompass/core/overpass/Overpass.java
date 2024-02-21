@@ -19,6 +19,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -49,7 +50,7 @@ public class Overpass {
         }
 
         if (geoMap.containsKey("neighborhood")) {
-            varsString += String.format("area[\"name\"=\"%s\"]->.county;", geoMap.get("neighborhood"));
+            varsString += String.format("area[\"name\"=\"%s\"]->.neighborhood;", geoMap.get("neighborhood"));
             geofilterString += "(area.neighborhood)";
         }
 
