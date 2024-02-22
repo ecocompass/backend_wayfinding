@@ -4,8 +4,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 public class Node {
+    private static final Logger logger = LogManager.getLogger(Node.class);
     public final double latitude;
     public final double longitude;
     boolean busStation;
@@ -70,11 +74,11 @@ public class Node {
     }
 
     void printDetails(){
-        System.out.printf("GPS: (%f, %f)\n", this.latitude, this.longitude);
-        System.out.println("Road neighbors:");
+        logger.info("GPS: ({}, {})\n", this.latitude, this.longitude);
+        logger.info("Road neighbors:");
 
         for (Neighbor nei : this.neighbors.get("road")) {
-            System.out.printf("   - %d\n", nei.nodeId);
+            logger.info("   - {}\n", nei.nodeId);
         }
     }
 }

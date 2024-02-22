@@ -22,7 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class Overpass {
+    private static final Logger logger = LogManager.getLogger(Overpass.class);
     private final String overpassUrl = "http://overpass-api.de/api/interpreter";
     private final HttpClient client;
 
@@ -54,14 +58,14 @@ public class Overpass {
         }
 
         String queryString = "[out:json];" + varsString + geofilterString + "[highway];>;);out body;";
-        System.out.println("SENDING REQUEST TO: " + overpassUrl);
-        System.out.println("QUERY STRING\n" + queryString);
+        logger.info("SENDING REQUEST TO: " + overpassUrl);
+        logger.info("QUERY STRING\n" + queryString);
         String encodedQueryString = URLEncoder.encode(queryString, Charset.defaultCharset());
 
 
         URI requestUrl = URI.create(overpassUrl + "?data=" + encodedQueryString);
 
-        System.out.println("REQUEST URL: " + requestUrl);
+        logger.info("REQUEST URL: " + requestUrl);
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(requestUrl)
@@ -70,9 +74,10 @@ public class Overpass {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
+                logger.info("Successfully queried Overpass API!");
                 return response.body();
             } else {
-                System.out.println("Error: " + response.statusCode() + "\n" + response.body());
+                logger.info("Error: " + response.statusCode() + "\n" + response.body());
                 return null;
             }
 
@@ -86,7 +91,7 @@ public class Overpass {
 
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(queryOutput);
-            System.out.println("Response body written to file: " + filePath);
+            logger.info("Response body written to file: " + filePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -100,11 +105,13 @@ public class Overpass {
     }
 
     public Graph createGraphFromOverpassQuery(String data) throws Exception {
+        logger.info("Creating Graph from Overpass query data");
         JSONObject parsedJSON = new JSONObject(data);
         JSONArray elementsArray = parsedJSON.getJSONArray("elements");
 
         Graph graph = new Graph();
 
+        logger.info("Adding Nodes and Edges to Graph");
         for (int i = 0; i < elementsArray.length(); i++) {
             JSONObject element = elementsArray.getJSONObject(i);
 
@@ -127,16 +134,18 @@ public class Overpass {
                 }
             }
         }
+        logger.info("Successfully finished creating Graph");
 
         return graph;
     }
 
     public KDTree createTreeFromGraph(Graph graph) {
-
+        logger.info("Creating KD-Tree from Graph");
         List<KdNode> nodes = new ArrayList<>();
 
         Map<Long, Node> allNodes = graph.getAllNodes();
 
+        logger.info("Adding nodes to KD-Tree");
         for (Map.Entry<Long, Node> entry : allNodes.entrySet()) {
             Long nodeID = entry.getKey();
             Node node = entry.getValue();
@@ -144,6 +153,7 @@ public class Overpass {
             KdNode kdNode = new KdNode(coordinates, nodeID, node);
             nodes.add(kdNode);
         }
+        logger.info("Successfully finished creating KD-Tree");
 
         return new KDTree(nodes);
     }

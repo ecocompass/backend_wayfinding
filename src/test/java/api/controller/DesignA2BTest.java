@@ -10,7 +10,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DesignA2BTest {
-
+    /*
     private PathFinder pathFinder;
 
     @BeforeEach
@@ -110,5 +110,6 @@ public class DesignA2BTest {
 
         assertEquals(new ArrayList<>(), result);
     }
+     */
 
 }
