@@ -1,5 +1,6 @@
 package org.ecocompass.api.controller;
 
+import org.ecocompass.api.response.ShortestPathResponse;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
@@ -22,7 +23,7 @@ public class RoutesController {
     }
 
     @GetMapping("/api/routes")
-    public List<double[]> getShortestPath(
+    public ShortestPathResponse getShortestPath(
             @RequestParam double[] startCoordinates,
             @RequestParam double[] endCoordinates
     ) throws Exception {
@@ -35,6 +36,8 @@ public class RoutesController {
 
         List<Node> shortestPathNodes = graph.shortestPath(startNode, endNode, "road");
 
-        return graph.extractCoordinates(shortestPathNodes);
+        List<double[]> shortestPathCoordinates = graph.extractCoordinates(shortestPathNodes);
+
+        return new ShortestPathResponse(shortestPathCoordinates);
     }
 }
