@@ -1,10 +1,13 @@
 package org.ecocompass.core.graph;
 
 import java.util.*;
-import org.json.JSONArray;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 public class Graph {
     Map<Long, Node> nodes;
+    private static final Logger logger = LogManager.getLogger(Graph.class);
 
     public Graph() {
         this.nodes = new HashMap<>();
@@ -49,7 +52,7 @@ public class Graph {
     }
 
     public List<Node> shortestPath(Long startNodeId, Long endNodeId, String transportType) throws Exception {
-        System.out.printf("Computing shortest-path from %d to %d over '%s'\n", startNodeId, endNodeId, transportType);
+        logger.info("Computing shortest-path from '{}' to '{}' over '{}'", startNodeId, endNodeId, transportType);
         PriorityQueue<NodeRecord> openList = new PriorityQueue<>(Comparator.comparingDouble(nr -> nr.estimatedTotalCost));
         Map<Long, NodeRecord> closedList = new HashMap<>();
 
@@ -118,6 +121,7 @@ public class Graph {
     }
 
     public List<double[]> extractCoordinates(List<Node> nodes) {
+        logger.info("Extracting coordinates as list from Node list");
         List<double[]> coordinates = new ArrayList<>();
 
         for (Node node : nodes) {

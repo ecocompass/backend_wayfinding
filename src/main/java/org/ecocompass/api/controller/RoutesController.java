@@ -1,4 +1,4 @@
-package org.ecocompass.core.controller;
+package org.ecocompass.api.controller;
 
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.graph.Graph;
@@ -26,8 +26,12 @@ public class RoutesController {
             @RequestParam double[] startCoordinates,
             @RequestParam double[] endCoordinates
     ) throws Exception {
-        Long startNode = tree.findNode(startCoordinates);
-        Long endNode = tree.findNode(endCoordinates);
+        // Swap the coordinates (lon, lat instead of lat, lon)
+        double[] startSwapped = {startCoordinates[1], startCoordinates[0]};
+        double[] endSwapped = {endCoordinates[1], endCoordinates[0]};
+
+        Long startNode = tree.findNode(startSwapped);
+        Long endNode = tree.findNode(endSwapped);
 
         List<Node> shortestPathNodes = graph.shortestPath(startNode, endNode, "road");
 

@@ -1,8 +1,13 @@
 package org.ecocompass.core.K_DTree;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.ecocompass.core.graph.Node;
+
 import java.util.*;
 
 public class KDTree {
+    private static final Logger logger = LogManager.getLogger(KDTree.class);
     private final KdNode root;
     private final int k;
 
@@ -70,6 +75,7 @@ public class KDTree {
     }
 
     public Long findNode(double[] point) {
+        logger.info("Finding nearest code to coordinates ({}, {})", point[0], point[1]);
         KdNode exactMatch = findExactMatch(root, point, 0);
 
         if (exactMatch != null) {
