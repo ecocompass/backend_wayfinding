@@ -1,4 +1,4 @@
-package org.ecocompass.core.controller;
+package org.ecocompass.api.controller;
 
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.graph.Graph;
