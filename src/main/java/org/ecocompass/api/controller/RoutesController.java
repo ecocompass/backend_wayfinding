@@ -22,7 +22,6 @@ public class RoutesController {
         this.tree = tree;
     }
 
-
     @GetMapping("/api/routes")
     public ShortestPathResponse getShortestPath(
             @RequestParam double[] startCoordinates,
