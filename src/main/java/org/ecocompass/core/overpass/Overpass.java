@@ -139,13 +139,13 @@ public class Overpass {
         return graph;
     }
 
-    public KDTree createTreeFromGraph(Graph graph) {
-        logger.info("Creating KD-Tree from Graph");
+    public KDTree createTreeFromGraph(Graph graph, String mode) {
+        logger.info("Creating KD-Tree from Graph for all possible mode of transports");
         List<KdNode> nodes = new ArrayList<>();
 
-        Map<Long, Node> allNodes = graph.getAllNodes();
+        Map<Long, Node> allNodes = graph.getAllNodes(mode);
 
-        logger.info("Adding nodes to KD-Tree");
+        logger.info("Adding nodes to KD-Tree of " + mode);
         for (Map.Entry<Long, Node> entry : allNodes.entrySet()) {
             Long nodeID = entry.getKey();
             Node node = entry.getValue();
@@ -153,9 +153,8 @@ public class Overpass {
             KdNode kdNode = new KdNode(coordinates, nodeID, node);
             nodes.add(kdNode);
         }
-        logger.info("Successfully finished creating KD-Tree");
+        logger.info("Successfully finished creating KD-Tree for " + mode);
 
         return new KDTree(nodes);
     }
-
 }
