@@ -37,7 +37,7 @@ public class Graph {
         node2.addNeighbor(transportType, node1Id, distance);
     }
 
-    public Map<Long, Node> getAllNodes() {
+    public Map<Long, Node> getAllNodes(String mode) {
         return this.nodes;
     }
 

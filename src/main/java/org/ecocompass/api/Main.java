@@ -32,9 +32,29 @@ public class Main {
         return overpass.createGraphFromOverpassQuery(response);
     }
 
-    @Bean
-    public KDTree kdTree(Graph graph, Overpass overpass) {
-        return overpass.createTreeFromGraph(graph);
+    @Bean(name = "kdTreeRoad")
+    public KDTree kdTreeRoad(Graph graph, Overpass overpass) {
+        return overpass.createTreeFromGraph(graph, "road");
+    }
+
+    @Bean(name = "kdTreeBus")
+    public KDTree kdTreeBus(Graph graph, Overpass overpass) {
+        return overpass.createTreeFromGraph(graph, "bus");
+    }
+
+    @Bean(name = "kdTreeLuas")
+    public KDTree kdTreeLuas(Graph graph, Overpass overpass) {
+        return overpass.createTreeFromGraph(graph, "luas");
+    }
+
+    @Bean(name = "kdTreeDart")
+    public KDTree kdTreeDart(Graph graph, Overpass overpass) {
+        return overpass.createTreeFromGraph(graph, "dart");
+    }
+
+    @Bean(name = "kdTreeBike")
+    public KDTree kdTreeBike(Graph graph, Overpass overpass) {
+        return overpass.createTreeFromGraph(graph, "bike");
     }
 
     @Bean
