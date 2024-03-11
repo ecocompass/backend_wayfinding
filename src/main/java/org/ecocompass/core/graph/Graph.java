@@ -38,7 +38,31 @@ public class Graph {
     }
 
     public Map<Long, Node> getAllNodes(String mode) {
-        return this.nodes;
+        Map<Long, Node> filteredNodes = new HashMap<>();
+        for (Map.Entry<Long, Node> entry : this.nodes.entrySet()) {
+            Long key = entry.getKey();
+            Node node = entry.getValue();
+            if(Objects.equals(mode, "road") && node.road){
+                filteredNodes.put(key, node);
+            } else {
+                if (Objects.equals(mode, "bus") && node.busStation) {
+                    filteredNodes.put(key, node);
+                } else {
+                    if (Objects.equals(mode, "luas") && node.luasStation) {
+                        filteredNodes.put(key, node);
+                    } else {
+                        if (Objects.equals(mode, "dart") && node.dartStation) {
+                            filteredNodes.put(key, node);
+                        } else {
+                            if (Objects.equals(mode, "bike") && node.bikeStation) {
+                                filteredNodes.put(key, node);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return filteredNodes;
     }
 
     private double calculateDistance(Node node1, Node node2) {
