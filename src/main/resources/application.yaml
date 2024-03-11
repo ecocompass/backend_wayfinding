@@ -1,16 +1,16 @@
 
 openweathermap:
   api:
-    key: 955a47a1c603db0ddcd1c3551277baa5
+    key: KEY
     host: 37.139.1.159 #api.openweathermap.org
 
 postgresql:
   api:
-    host: 140.238.228.234
-    port: 8086
-    dbName: postgres
-    dbUserName: pastav
-    dbPassword: ase123pastav
+    host: IP
+    port: PORT
+    dbName: DBNAME
+    dbUserName: USERNAME
+    dbPassword: PASSWORD
 
 spring:
   datasource:
