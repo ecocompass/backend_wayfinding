@@ -25,10 +25,10 @@ public class Main {
 
     @Bean
     public Graph graph(Overpass overpass) throws Exception {
-        String response = overpass.queryLocation(Map.of("country", "IE", "county", "County Dublin"));
+        //String response = overpass.queryLocation(Map.of("country", "IE", "county", "County Dublin"));
         // "neighborhood", "Grosvenor Square"
-        overpass.saveQueryOutput(response, "query_data.json");
-        //String response = overpass.loadSavedQueryOutput("query_data.json");
+        //overpass.saveQueryOutput(response, "query_data.json");
+        String response = overpass.loadSavedQueryOutput("query_data.json");
         return overpass.createGraphFromOverpassQuery(response);
     }
 

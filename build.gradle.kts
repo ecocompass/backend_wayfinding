@@ -21,6 +21,7 @@ dependencies {
     implementation("org.projectlombok:lombok:1.18.28")
     implementation("org.apache.logging.log4j:log4j-api:2.23.0")
     implementation("org.apache.logging.log4j:log4j-core:2.23.0")
+    implementation("org.postgresql:postgresql:42.6.0")
     runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
