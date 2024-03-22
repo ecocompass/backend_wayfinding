@@ -80,9 +80,7 @@ public class Graph {
 
             for (Neighbor neighbor : currentNode.neighbors.get(transportType)) {
                 String neighborId = neighbor.nodeId;
-
                 if (closedList.containsKey(neighborId)) continue;
-
                 double tentativeCost = currentRecord.costSoFar + neighbor.weight;
                 double heuristicCost = calculateDistance(nodes.get(neighborId), endNode);
                 double totalCost = tentativeCost + heuristicCost;

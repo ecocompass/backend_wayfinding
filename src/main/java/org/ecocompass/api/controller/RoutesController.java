@@ -10,7 +10,6 @@ import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,7 +43,6 @@ public class RoutesController {
         // Swap the coordinates (lon, lat instead of lat, lon)
         double[] startSwapped = {startCoordinates[1], startCoordinates[0]};
         double[] endSwapped = {endCoordinates[1], endCoordinates[0]};
-
         KdNode startNode = kdTreeRoad.findNode(startSwapped);
         KdNode endNode = kdTreeRoad.findNode(endSwapped);
 

@@ -32,7 +32,6 @@ public class Overpass {
     private static final Logger logger = LogManager.getLogger(Overpass.class);
     private final String overpassUrl = "http://overpass-api.de/api/interpreter";
     private final HttpClient client;
-
     private final FinderCore finderCore;
 
     public Overpass() {

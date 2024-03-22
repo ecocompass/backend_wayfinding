@@ -1,5 +1,4 @@
 package org.ecocompass.core.K_DTree;
-
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,7 +57,6 @@ public class KDTree {
         double distSq = 0.0;
         for (int i = 0; i < k; i++) {
             distSq += finderCore.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
-
         }
 
         // Update best neighbor if this node is closer
