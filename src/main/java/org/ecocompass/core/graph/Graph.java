@@ -6,23 +6,23 @@ import org.apache.logging.log4j.Logger;
 
 
 public class Graph {
-    Map<Long, Node> nodes;
+    Map<String, Node> nodes;
     private static final Logger logger = LogManager.getLogger(Graph.class);
 
     public Graph() {
         this.nodes = new HashMap<>();
     }
 
-    public void addCustomNode(Long nodeId, Node node) {
+    public void addCustomNode(String nodeId, Node node) {
         this.nodes.put(nodeId, node);
     }
 
-    public void addNode(Long nodeId, double latitude, double longitude) {
+    public void addNode(String nodeId, double latitude, double longitude) {
         Node node = new Node(latitude, longitude);
         this.nodes.put(nodeId, node);
     }
 
-    public void addEdge(Long node1Id, Long node2Id, String transportType) throws Exception {
+    public void addEdge(String node1Id, String node2Id, String transportType) throws Exception {
         Node node1 = this.nodes.get(node1Id);
         Node node2 = this.nodes.get(node2Id);
         if (node1 == null) {
@@ -37,7 +37,7 @@ public class Graph {
         node2.addNeighbor(transportType, node1Id, distance);
     }
 
-    public Map<Long, Node> getAllNodes(String mode) {
+    public Map<String, Node> getAllNodes(String mode) {
         return this.nodes;
     }
 
@@ -51,10 +51,10 @@ public class Graph {
         return 6371 * c;
     }
 
-    public List<Node> shortestPath(Long startNodeId, Long endNodeId, String transportType) throws Exception {
+    public List<Node> shortestPath(String startNodeId, String endNodeId, String transportType) throws Exception {
         logger.info("Computing shortest-path from '{}' to '{}' over '{}'", startNodeId, endNodeId, transportType);
         PriorityQueue<NodeRecord> openList = new PriorityQueue<>(Comparator.comparingDouble(nr -> nr.estimatedTotalCost));
-        Map<Long, NodeRecord> closedList = new HashMap<>();
+        Map<String, NodeRecord> closedList = new HashMap<>();
 
         Node startNode = nodes.get(startNodeId);
         Node endNode = nodes.get(endNodeId);
@@ -79,10 +79,8 @@ public class Graph {
             }
 
             for (Neighbor neighbor : currentNode.neighbors.get(transportType)) {
-                Long neighborId = neighbor.nodeId;
-
+                String neighborId = neighbor.nodeId;
                 if (closedList.containsKey(neighborId)) continue;
-
                 double tentativeCost = currentRecord.costSoFar + neighbor.weight;
                 double heuristicCost = calculateDistance(nodes.get(neighborId), endNode);
                 double totalCost = tentativeCost + heuristicCost;
@@ -108,10 +106,10 @@ public class Graph {
         return Collections.emptyList(); // Path not found
     }
 
-    private List<Node> reconstructPath(Map<Long, NodeRecord> closedList, Long endNodeId) {
+    private List<Node> reconstructPath(Map<String, NodeRecord> closedList, String endNodeId) {
         LinkedList<Node> path = new LinkedList<>();
 
-        Long currentNodeId = endNodeId;
+        String currentNodeId = endNodeId;
         while (currentNodeId != null) {
             path.addFirst(this.nodes.get(currentNodeId));
             NodeRecord record = closedList.get(currentNodeId);
@@ -133,12 +131,12 @@ public class Graph {
     }
 
     static class NodeRecord {
-        Long nodeId;
-        Long previousNodeId;
+        String nodeId;
+        String previousNodeId;
         double costSoFar;
         double estimatedTotalCost;
 
-        public NodeRecord(Long nodeId, Long previousNodeId, double costSoFar, double estimatedTotalCost) {
+        public NodeRecord(String nodeId, String previousNodeId, double costSoFar, double estimatedTotalCost) {
             this.nodeId = nodeId;
             this.previousNodeId = previousNodeId;
             this.costSoFar = costSoFar;
@@ -148,10 +146,10 @@ public class Graph {
 }
 
 class Neighbor {
-    Long nodeId;
+    String nodeId;
     Double weight;
 
-    public Neighbor(Long nodeId, Double weight) {
+    public Neighbor(String nodeId, Double weight) {
         this.nodeId = nodeId;
         this.weight = weight;
     }
