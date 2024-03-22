@@ -12,5 +12,4 @@ public class ShortestPathResponse {
     public List<double[]> getShortestPathCoordinates(){
         return this.shortestPathCoordinates;
     }
-
 }

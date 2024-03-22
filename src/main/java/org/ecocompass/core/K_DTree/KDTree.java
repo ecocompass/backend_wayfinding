@@ -58,6 +58,7 @@ public class KDTree {
         double distSq = 0.0;
         for (int i = 0; i < k; i++) {
             distSq += finderCore.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
+
         }
 
         // Update best neighbor if this node is closer
@@ -120,7 +121,6 @@ public class KDTree {
         }
     }
 
-
     public static class NodeWithDistance implements Comparable<NodeWithDistance> {
         public KdNode node;
         double distSq;
@@ -135,7 +135,6 @@ public class KDTree {
             return Double.compare(this.distSq, other.distSq);
         }
     }
-
 
     public PriorityQueue<NodeWithDistance> kNearestNeighbors(KdNode node, double[] point, int depth, int k, PriorityQueue<NodeWithDistance> pq) {
         if (node == null) {

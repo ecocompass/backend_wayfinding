@@ -10,6 +10,7 @@ import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,7 +25,6 @@ import java.util.Map;
 public class RoutesController {
 
     private final Graph graph;
-
     private final Query query;
 
     private final KDTree kdTreeRoad;
