@@ -42,11 +42,7 @@ public class Node {
         this.neighbors.put("dart", new java.util.ArrayList<>());
     }
 
-<<<<<<< HEAD
     public void addNeighbor(String type, String nodeID, Double weight) throws Exception {
-=======
-    public void addNeighbor(String type, Long nodeID, Double weight) throws Exception {
->>>>>>> 8e8b77e7c1d5c599de3decc2651d6f649133d853
         List<Neighbor> neighbors = this.neighbors.get(type);
         // Only add neighbor if type is correct
         if (neighbors != null) {
