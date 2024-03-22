@@ -9,13 +9,13 @@ import org.ecocompass.core.graph.Node;
 @Setter
 public class KdNode {
     double[] coordinates;
-    Long nodeID;
+    String nodeID;
     KdNode left;
     KdNode right;
 
     Node node;
 
-    public KdNode(double[] coordinates, Long nodeID, Node node) {
+    public KdNode(double[] coordinates, String nodeID, Node node) {
         this.coordinates = coordinates;
         this.node = node;
         this.nodeID = nodeID;
@@ -25,7 +25,7 @@ public class KdNode {
         return coordinates;
     }
 
-    public Long getNodeID() {
+    public String getNodeID() {
         return nodeID;
     }
 

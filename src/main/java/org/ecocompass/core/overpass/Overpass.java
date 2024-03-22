@@ -2,6 +2,7 @@ package org.ecocompass.core.overpass;
 
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
+import org.ecocompass.core.PathFinder.FinderCore;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
 import org.json.JSONArray;
@@ -17,6 +18,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +33,11 @@ public class Overpass {
     private final String overpassUrl = "http://overpass-api.de/api/interpreter";
     private final HttpClient client;
 
+    private final FinderCore finderCore;
+
     public Overpass() {
         client = HttpClient.newHttpClient();
+        finderCore = new FinderCore();
     }
     public String queryLocation(Map<String, String> geoMap) {
         String varsString = "";
@@ -116,17 +122,17 @@ public class Overpass {
             JSONObject element = elementsArray.getJSONObject(i);
 
             if (Objects.equals(element.getString("type"), "node")) {
-                Long nodeID = element.getLong("id");
+                String nodeID = element.optString("id");
                 double lat = element.getDouble("lat");
                 double lon = element.getDouble("lon");
                 graph.addNode(nodeID, lat, lon);
 
             } else if (Objects.equals(element.getString("type"), "way")) {
                 JSONArray nodesArray = element.getJSONArray("nodes");
-                Long lastRef = null;
+                String lastRef = null;
 
                 for (int j = 0; j < nodesArray.length(); j++) {
-                    Long nodeID = nodesArray.getLong(j);
+                    String nodeID = nodesArray.optString(j);
                     if (lastRef != null) {
                         graph.addEdge(nodeID, lastRef, "road");
                     }
@@ -139,21 +145,32 @@ public class Overpass {
         return graph;
     }
 
+    public KDTree createTreeFromGraph(String mode, String gtfsFileName, String roadDataFileName) throws IOException {
+        logger.info("Creating KD-Tree for " + mode);
+        if (Objects.equals(mode, "road") || Objects.equals(mode, "bike")) {
+            String transitData = Files.readString(Path.of(roadDataFileName));
+            JSONObject jsonObject = new JSONObject(transitData);
+            return finderCore.buildKDTree(jsonObject);
+        } else {
+            String transitData = Files.readString(Path.of(gtfsFileName));
+            JSONObject jsonObject = new JSONObject(transitData);
+            return finderCore.buildKDTree(jsonObject.getJSONObject(mode + "_stops"));
+        }
+    }
+
     public KDTree createTreeFromGraph(Graph graph, String mode) {
-        logger.info("Creating KD-Tree from Graph for all possible mode of transports");
         List<KdNode> nodes = new ArrayList<>();
 
-        Map<Long, Node> allNodes = graph.getAllNodes(mode);
+        Map<String, Node> allNodes = graph.getAllNodes(mode);
 
         logger.info("Adding nodes to KD-Tree of " + mode);
-        for (Map.Entry<Long, Node> entry : allNodes.entrySet()) {
-            Long nodeID = entry.getKey();
+        for (Map.Entry<String, Node> entry : allNodes.entrySet()) {
+            String nodeID = String.valueOf(entry.getKey());
             Node node = entry.getValue();
             double[] coordinates = {node.latitude, node.longitude};
             KdNode kdNode = new KdNode(coordinates, nodeID, node);
             nodes.add(kdNode);
         }
-        logger.info("Successfully finished creating KD-Tree for " + mode);
 
         return new KDTree(nodes);
     }

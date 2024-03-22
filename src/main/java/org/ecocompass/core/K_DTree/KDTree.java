@@ -1,19 +1,32 @@
 package org.ecocompass.core.K_DTree;
 
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.ecocompass.core.graph.Node;
+import org.ecocompass.core.PathFinder.FinderCore;
 
 import java.util.*;
 
 public class KDTree {
     private static final Logger logger = LogManager.getLogger(KDTree.class);
+
+    private FinderCore finderCore;
+
+    @Getter
     private final KdNode root;
     private final int k;
+
+    private final Map<String, KdNode> nodeCache;
 
     public KDTree(List<KdNode> nodes) {
         this.k = nodes.get(0).getCoordinates().length;
         this.root = buildTree(nodes, 0);
+        finderCore = new FinderCore();
+        nodeCache = new HashMap<>();
+    }
+
+    public KdNode getRoot(){
+        return this.root;
     }
 
     private KdNode buildTree(List<KdNode> points, int depth) {
@@ -44,7 +57,7 @@ public class KDTree {
         int axis = depth % k;
         double distSq = 0.0;
         for (int i = 0; i < k; i++) {
-            distSq += Math.pow(node.coordinates[i] - point[i], 2);
+            distSq += finderCore.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
         }
 
         // Update best neighbor if this node is closer
@@ -70,19 +83,23 @@ public class KDTree {
         }
     }
 
-    public Long findNearestNeighbor(double[] point) {
-        return nearestNeighbor(root, point, 0, null, Double.MAX_VALUE).getNodeID();
+    public KdNode findNearestNeighbor(double[] point) {
+        return nearestNeighbor(root, point, 0, null, Double.MAX_VALUE);
     }
 
-    public Long findNode(double[] point) {
-        logger.info("Finding nearest code to coordinates ({}, {})", point[0], point[1]);
+    public KdNode findNode(double[] point) {
+        //logger.info("Finding nearest code to coordinates ({}, {})", point[0], point[1]);
+        String cacheKey = Arrays.toString(point);
+        if (nodeCache.containsKey(cacheKey)) {
+            return nodeCache.get(cacheKey);
+        }
         KdNode exactMatch = findExactMatch(root, point, 0);
 
-        if (exactMatch != null) {
-            return exactMatch.getNodeID();
-        } else {
-            return findNearestNeighbor(point);
+        if (exactMatch == null) {
+            exactMatch = findNearestNeighbor(point);
         }
+        nodeCache.put(cacheKey, exactMatch);
+        return exactMatch;
     }
 
     private KdNode findExactMatch(KdNode node, double[] point, int depth) {
@@ -104,8 +121,8 @@ public class KDTree {
     }
 
 
-    private static class NodeWithDistance implements Comparable<NodeWithDistance> {
-        KdNode node;
+    public static class NodeWithDistance implements Comparable<NodeWithDistance> {
+        public KdNode node;
         double distSq;
 
         NodeWithDistance(KdNode node, double distSq) {
@@ -119,34 +136,32 @@ public class KDTree {
         }
     }
 
-    public List<KdNode> kNearestNeighbors(KdNode node, double[] point, int depth, int k, PriorityQueue<NodeWithDistance> pq) {
+
+    public PriorityQueue<NodeWithDistance> kNearestNeighbors(KdNode node, double[] point, int depth, int k, PriorityQueue<NodeWithDistance> pq) {
         if (node == null) {
-            return new ArrayList<>();
+            return pq;
         }
 
-        int axis = depth % k;
-        double distSq = 0.0;
-        for (int i = 0; i < k; i++) {
-            distSq += Math.pow(node.coordinates[i] - point[i], 2);
-        }
+        int axis = depth % this.k;
+        double distSq = finderCore.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
 
-        if (pq.size() < k || distSq < pq.peek().distSq) {
+        if (pq.size() < k) {
             pq.add(new NodeWithDistance(node, distSq));
-            if (pq.size() > k) {
+        } else {
+            assert pq.peek() != null;
+            if (distSq < pq.peek().distSq) {
                 pq.poll();
+                pq.add(new NodeWithDistance(node, distSq));
             }
         }
 
-        List<KdNode> neighbors = new ArrayList<>();
-
-        if (point[axis] < node.coordinates[axis]) {
-            neighbors.addAll(kNearestNeighbors(node.left, point, depth + 1, k, pq));
-            neighbors.addAll(kNearestNeighbors(node.right, point, depth + 1, k, pq));
+        // Traverse the KDTree based on the current axis
+        if (point[axis] < node.getCoordinates()[axis]) {
+            pq = kNearestNeighbors(node.getLeft(), point, depth + 1, k, pq);
         } else {
-            neighbors.addAll(kNearestNeighbors(node.right, point, depth + 1, k, pq));
-            neighbors.addAll(kNearestNeighbors(node.left, point, depth + 1, k, pq));
+            pq = kNearestNeighbors(node.getRight(), point, depth + 1, k, pq);
         }
 
-        return neighbors;
+        return pq;
     }
 }
