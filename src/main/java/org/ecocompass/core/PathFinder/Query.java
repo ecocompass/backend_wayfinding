@@ -12,15 +12,13 @@ import org.ecocompass.core.util.FoundSolution;
 import org.ecocompass.core.util.TransitRoute;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.Resource;
+
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
-import static org.ecocompass.core.util.Constants.CONSOLIDATED_GTFS_FILE;
-import static org.ecocompass.core.util.Constants.ROAD_PROCESSED_DATA_FILE;
 
 public class Query {
 
@@ -32,25 +30,30 @@ public class Query {
     private final KDTree kdTreeBike;
     private final JSONObject transitMap;
     private final JSONObject roadMap;
-
     private static final Logger logger = LogManager.getLogger(Query.class);
-
     private final Map<String, List<TransitRoute>> transitRoutesCache;
 
     public Query(@Qualifier("kdTreeRoad") KDTree kdTreeRoad,
                  @Qualifier("kdTreeBus") KDTree kdTreeBus, @Qualifier("kdTreeLuas") KDTree kdTreeLuas,
-                 @Qualifier("kdTreeDart") KDTree kdTreeDart, @Qualifier("kdTreeBike") KDTree kdTreeBike) throws IOException {
+                 @Qualifier("kdTreeDart") KDTree kdTreeDart, @Qualifier("kdTreeBike") KDTree kdTreeBike,
+                 @Qualifier("gtfsFile") Resource gtfsResource,
+                 @Qualifier("roadProcessedDataFile") Resource roadProcessedResource) throws IOException {
         this.kdTreeRoad = kdTreeRoad;
         this.kdTreeBus = kdTreeBus;
         this.kdTreeLuas = kdTreeLuas;
         this.kdTreeDart = kdTreeDart;
         this.kdTreeBike = kdTreeBike;
 
-        String transitData = Files.readString(Path.of(CONSOLIDATED_GTFS_FILE));
-        this.transitMap = new JSONObject(transitData);
+        try (InputStream inputStream = gtfsResource.getInputStream()) {
+            String transitData = new String(inputStream.readAllBytes());
+            this.transitMap = new JSONObject(transitData);
 
-        String roadData = Files.readString(Path.of(ROAD_PROCESSED_DATA_FILE));
-        this.roadMap = new JSONObject(roadData);
+        }
+
+        try (InputStream inputStream = roadProcessedResource.getInputStream()) {
+            String roadData = new String(inputStream.readAllBytes());
+            this.roadMap = new JSONObject(roadData);
+        }
 
         finderCore = new FinderCore();
         transitRoutesCache = new HashMap<>();
