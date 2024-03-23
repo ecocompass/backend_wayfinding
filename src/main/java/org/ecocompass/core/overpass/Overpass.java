@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -27,6 +28,7 @@ import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.core.io.Resource;
 
 public class Overpass {
     private static final Logger logger = LogManager.getLogger(Overpass.class);
@@ -102,11 +104,11 @@ public class Overpass {
         }
     }
 
-    public String loadSavedQueryOutput(String filePath) throws IOException {
-        FileInputStream fis = new FileInputStream(filePath);
-        byte[] data = new byte[fis.available()];
-        fis.read(data);
-        return new String(data, StandardCharsets.UTF_8);
+    public String loadSavedQueryOutput(Resource resource) throws IOException {
+        try (InputStream inputStream = resource.getInputStream()) {
+            byte[] data = inputStream.readAllBytes();
+            return new String(data, StandardCharsets.UTF_8);
+        }
     }
 
     public Graph createGraphFromOverpassQuery(String data) throws Exception {
@@ -144,16 +146,20 @@ public class Overpass {
         return graph;
     }
 
-    public KDTree createTreeFromGraph(String mode, String gtfsFileName, String roadDataFileName) throws IOException {
+    public KDTree createTreeFromGraph(String mode, Resource gtfsResource, Resource roadDataResource) throws IOException {
         logger.info("Creating KD-Tree for " + mode);
         if (Objects.equals(mode, "road") || Objects.equals(mode, "bike")) {
-            String transitData = Files.readString(Path.of(roadDataFileName));
-            JSONObject jsonObject = new JSONObject(transitData);
-            return finderCore.buildKDTree(jsonObject);
+            try (InputStream transitDataStream = roadDataResource.getInputStream()) {
+                String transitData = new String(transitDataStream.readAllBytes());
+                JSONObject jsonObject = new JSONObject(transitData);
+                return finderCore.buildKDTree(jsonObject);
+            }
         } else {
-            String transitData = Files.readString(Path.of(gtfsFileName));
-            JSONObject jsonObject = new JSONObject(transitData);
-            return finderCore.buildKDTree(jsonObject.getJSONObject(mode + "_stops"));
+            try (InputStream transitDataStream = gtfsResource.getInputStream()) {
+                String transitData = new String(transitDataStream.readAllBytes());
+                JSONObject jsonObject = new JSONObject(transitData);
+                return finderCore.buildKDTree(jsonObject.getJSONObject(mode + "_stops"));
+            }
         }
     }
 

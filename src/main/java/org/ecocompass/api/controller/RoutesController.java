@@ -2,7 +2,6 @@ package org.ecocompass.api.controller;
 
 import org.ecocompass.api.response.ShortestPathResponse;
 import org.ecocompass.api.response.TransitionRouteResponse;
-import org.ecocompass.api.utility.RecommendationPath;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.PathFinder.Query;
@@ -14,11 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class RoutesController {
