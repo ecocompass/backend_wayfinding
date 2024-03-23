@@ -10,7 +10,7 @@ public class Constants {
     public static final String ROAD_PROCESSED_DATA_FILE_NAME = "data/road_map.json";
 
     public static final Map<String, Integer> AVERAGE_SPEEDS = Map.of(
-            "walking", 4,
+            "walk", 4,
             "bus", 15,
             "luas", 25,
             "dart", 60

@@ -12,13 +12,14 @@ public class KdNode {
     String nodeID;
     KdNode left;
     KdNode right;
-
     Node node;
+    String name;
 
-    public KdNode(double[] coordinates, String nodeID, Node node) {
+    public KdNode(double[] coordinates, String nodeID, Node node, String name) {
         this.coordinates = coordinates;
         this.node = node;
         this.nodeID = nodeID;
+        this.name = name;
     }
 
     public double[] getCoordinates() {
@@ -27,6 +28,10 @@ public class KdNode {
 
     public String getNodeID() {
         return nodeID;
+    }
+
+    public String getName(){
+        return name;
     }
 
     public Node getNode() {
