@@ -18,3 +18,8 @@ spring:
     username: ${postgresql.api.dbUserName}
     password: ${postgresql.api.dbPassword}
     driver-class-name: org.postgresql.Driver
+
+  resources:
+    gtfsFile: classpath:data/consolidated_gtfs.json
+    queryDataFile: classpath:data/query_data.json
+    roadProcessedDataFile: classpath:data/road_map.json
