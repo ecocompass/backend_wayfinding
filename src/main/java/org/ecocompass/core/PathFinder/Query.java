@@ -19,6 +19,9 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.ecocompass.core.util.Constants.CONSOLIDATED_GTFS_FILE;
+import static org.ecocompass.core.util.Constants.ROAD_PROCESSED_DATA_FILE;
+
 public class Query {
 
     private final FinderCore finderCore;
@@ -43,10 +46,10 @@ public class Query {
         this.kdTreeDart = kdTreeDart;
         this.kdTreeBike = kdTreeBike;
 
-        String transitData = Files.readString(Path.of("C:\\Users\\rahul\\IdeaProjects\\backend_wayfinding\\src\\main\\java\\org\\ecocompass\\core\\data\\consolidated_gtfs.json"));
+        String transitData = Files.readString(Path.of(CONSOLIDATED_GTFS_FILE));
         this.transitMap = new JSONObject(transitData);
 
-        String roadData = Files.readString(Path.of("C:\\Users\\rahul\\IdeaProjects\\backend_wayfinding\\src\\main\\java\\org\\ecocompass\\core\\data\\road_map.json"));
+        String roadData = Files.readString(Path.of(ROAD_PROCESSED_DATA_FILE));
         this.roadMap = new JSONObject(roadData);
 
         finderCore = new FinderCore();
@@ -104,6 +107,11 @@ public class Query {
                                      RecommendationPath recommendation, String mode) {
         PathWithMode path = new PathWithMode();
         path.setMode(mode);
+        path.setStartStopName(route.get(lastIndex).getFoundSolution().getPossibleSolution().getStartNode().getName());
+        path.setEndStopName(route.get(lastIndex).getFoundSolution().getPossibleSolution().getEndNode().getName());
+        path.setModeNumber(route.get(lastIndex).getFoundSolution().getModeNumber());
+        path.setRouteNumber(route.get(lastIndex).getFoundSolution().getRoute());
+        path.setTimeStamp(route.get(lastIndex).getFoundSolution().getWaitTime().get(0));
         path.setPathPointList(swapCoordinates(route.get(lastIndex).getFoundSolution().getTraceCoordinates()));
         path.setDistance(route.get(lastIndex).getFoundSolution().getDistance());
         recommendation.addPath(path);
@@ -112,8 +120,10 @@ public class Query {
 
 
     private void addPathModeWalkNext(List<TransitRoute> route, RecommendationPath recommendation) {
-        KdNode walkStartNextEnd = kdTreeRoad.findNode(route.get(0).getFoundSolution().getPossibleSolution().getEndNode().getCoordinates());
-        KdNode walkEndNextStart = kdTreeRoad.findNode(route.get(1).getFoundSolution().getPossibleSolution().getStartNode().getCoordinates());
+        KdNode walkStartNextEnd = kdTreeRoad.findNode(
+                route.get(0).getFoundSolution().getPossibleSolution().getEndNode().getCoordinates());
+        KdNode walkEndNextStart = kdTreeRoad.findNode(
+                route.get(1).getFoundSolution().getPossibleSolution().getStartNode().getCoordinates());
         List<double[]> walkPath = finderCore.getShortestPathRoad(walkStartNextEnd, walkEndNextStart, roadMap);
         double walkDistance = finderCore.getRouteDistance(walkPath);
 
@@ -160,9 +170,12 @@ public class Query {
         double directRoadDistance = finderCore.getRouteDistance(roadRouteStartEnd);
         logger.info("A-star distance: {}", directRoadDistance);
 
-        CompletableFuture<List<List<TransitRoute>>> luasSolsFuture = CompletableFuture.supplyAsync(() -> getLuasSols(start, end));
-        CompletableFuture<List<List<TransitRoute>>> busSolsFuture = CompletableFuture.supplyAsync(() -> getBusSols(start, end, directRoadDistance));
-        CompletableFuture<List<List<TransitRoute>>> busSplitSolsFuture = CompletableFuture.supplyAsync(() -> getBusSplitSols(start, end, roadRouteStartEnd));
+        CompletableFuture<List<List<TransitRoute>>> luasSolsFuture =
+                CompletableFuture.supplyAsync(() -> getLuasSols(start, end));
+        CompletableFuture<List<List<TransitRoute>>> busSolsFuture =
+                CompletableFuture.supplyAsync(() -> getBusSols(start, end, directRoadDistance));
+        CompletableFuture<List<List<TransitRoute>>> busSplitSolsFuture =
+                CompletableFuture.supplyAsync(() -> getBusSplitSols(start, end, roadRouteStartEnd));
 
         try {
             CompletableFuture.allOf(luasSolsFuture, busSolsFuture, busSplitSolsFuture).join();
@@ -279,7 +292,8 @@ public class Query {
         return luasSols.subList(0, Math.min(1, luasSols.size()));
     }
 
-    private static void updateLuasSol(List<TransitRoute> busRoutes, double luasRoute, List<TransitRoute> busSol, List<TransitRoute> luasSol) {
+    private static void updateLuasSol(List<TransitRoute> busRoutes, double luasRoute, List<TransitRoute> busSol,
+                                      List<TransitRoute> luasSol) {
         if (!busRoutes.isEmpty()) {
             for (TransitRoute busRoute : busRoutes) {
                 if (busRoute.getDistanceStart() + busRoute.getDistanceEnd() < luasRoute - 0.5) {

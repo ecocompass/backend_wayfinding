@@ -167,7 +167,7 @@ public class Overpass {
             String nodeID = String.valueOf(entry.getKey());
             Node node = entry.getValue();
             double[] coordinates = {node.latitude, node.longitude};
-            KdNode kdNode = new KdNode(coordinates, nodeID, node);
+            KdNode kdNode = new KdNode(coordinates, nodeID, node, "nodePoint");
             nodes.add(kdNode);
         }
 
