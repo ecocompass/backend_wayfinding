@@ -19,6 +19,9 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.ecocompass.core.util.Constants.CONSOLIDATED_GTFS_FILE;
+import static org.ecocompass.core.util.Constants.ROAD_PROCESSED_DATA_FILE;
+
 public class Query {
 
     private final FinderCore finderCore;
@@ -43,12 +46,10 @@ public class Query {
         this.kdTreeDart = kdTreeDart;
         this.kdTreeBike = kdTreeBike;
 
-        String transitData = Files.readString(Path.of(
-                "C:\\Users\\rahul\\IdeaProjects\\backend_wayfinding\\src\\main\\java\\org\\ecocompass\\core\\data\\consolidated_gtfs.json"));
+        String transitData = Files.readString(Path.of(CONSOLIDATED_GTFS_FILE));
         this.transitMap = new JSONObject(transitData);
 
-        String roadData = Files.readString(Path.of(
-                "C:\\Users\\rahul\\IdeaProjects\\backend_wayfinding\\src\\main\\java\\org\\ecocompass\\core\\data\\road_map.json"));
+        String roadData = Files.readString(Path.of(ROAD_PROCESSED_DATA_FILE));
         this.roadMap = new JSONObject(roadData);
 
         finderCore = new FinderCore();

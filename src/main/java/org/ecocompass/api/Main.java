@@ -13,12 +13,11 @@ import org.springframework.context.annotation.Bean;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Map;
+
+import static org.ecocompass.core.util.Constants.*;
 
 @SpringBootApplication
 public class Main {
-    private final String gtfsFile = "src\\main\\java\\org\\ecocompass\\core\\data\\consolidated_gtfs.json";
-    private final String roadDataFile = "src\\main\\java\\org\\ecocompass\\core\\data\\road_map.json";
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
@@ -33,8 +32,7 @@ public class Main {
         //String response = overpass.queryLocation(Map.of("country", "IE", "county", "County Dublin"));
         // "neighborhood", "Grosvenor Square"
         //overpass.saveQueryOutput(response, "query_data.json");
-        String queryDataFile = "src\\main\\java\\org\\ecocompass\\core\\data\\query_data.json";
-        String response = overpass.loadSavedQueryOutput(queryDataFile);
+        String response = overpass.loadSavedQueryOutput(QUERY_DATA_FILE);
         return overpass.createGraphFromOverpassQuery(response);
     }
 
@@ -45,17 +43,17 @@ public class Main {
 
     @Bean(name = "kdTreeBus")
     public KDTree kdTreeBus(Graph graph, Overpass overpass) throws IOException {
-        return overpass.createTreeFromGraph("bus", gtfsFile, roadDataFile);
+        return overpass.createTreeFromGraph("bus", CONSOLIDATED_GTFS_FILE, ROAD_PROCESSED_DATA_FILE);
     }
 
     @Bean(name = "kdTreeLuas")
     public KDTree kdTreeLuas(Graph graph, Overpass overpass) throws IOException {
-        return overpass.createTreeFromGraph("luas", gtfsFile, roadDataFile);
+        return overpass.createTreeFromGraph("luas", CONSOLIDATED_GTFS_FILE, ROAD_PROCESSED_DATA_FILE);
     }
 
     @Bean(name = "kdTreeDart")
     public KDTree kdTreeDart(Graph graph, Overpass overpass) throws IOException {
-        return overpass.createTreeFromGraph("dart", gtfsFile, roadDataFile);
+        return overpass.createTreeFromGraph("dart", CONSOLIDATED_GTFS_FILE, ROAD_PROCESSED_DATA_FILE);
     }
 
     @Bean(name = "kdTreeBike")

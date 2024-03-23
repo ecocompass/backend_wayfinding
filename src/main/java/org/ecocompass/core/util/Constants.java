@@ -5,9 +5,9 @@ import java.util.Map;
 
 public class Constants {
     public static final List<String> GTFS_TYPES = List.of("bus", "dart", "luas");
-    public static final String CONSOLIDATED_GTFS_FILE_NAME = "data/consolidated_gtfs.json";
-    public static final String ROAD_RAW_DATA_FILE_NAME = "data/.road_overpass.json";
-    public static final String ROAD_PROCESSED_DATA_FILE_NAME = "data/road_map.json";
+    public static final String CONSOLIDATED_GTFS_FILE = "src\\main\\resources\\data\\consolidated_gtfs.json";
+    public static final String QUERY_DATA_FILE = "src\\main\\resources\\data\\query_data.json";
+    public static final String ROAD_PROCESSED_DATA_FILE = "src\\main\\resources\\data\\road_map.json";
 
     public static final Map<String, Integer> AVERAGE_SPEEDS = Map.of(
             "walk", 4,
