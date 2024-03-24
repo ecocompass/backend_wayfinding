@@ -7,6 +7,7 @@ import org.ecocompass.api.utility.PathWithMode;
 import org.ecocompass.api.utility.RecommendationPath;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
+import org.ecocompass.core.util.CacheEntry;
 import org.ecocompass.core.util.Constants;
 import org.ecocompass.core.util.FoundSolution;
 import org.ecocompass.core.util.TransitRoute;
@@ -31,7 +32,7 @@ public class Query {
     private final JSONObject transitMap;
     private final JSONObject roadMap;
     private static final Logger logger = LogManager.getLogger(Query.class);
-    private final Map<String, List<TransitRoute>> transitRoutesCache;
+    private final Map<String, CacheEntry<List<TransitRoute>>> transitRoutesCache;
 
     public Query(@Qualifier("kdTreeRoad") KDTree kdTreeRoad,
                  @Qualifier("kdTreeBus") KDTree kdTreeBus, @Qualifier("kdTreeLuas") KDTree kdTreeLuas,
@@ -341,14 +342,15 @@ public class Query {
 
     public List<TransitRoute> getTransitRoutes(double[] start, double[] end, String mode, int k) {
         String cacheKey = Arrays.toString(start) + Arrays.toString(end) + mode + k;
-        if (transitRoutesCache.containsKey(cacheKey)) {
-            return transitRoutesCache.get(cacheKey);
+        CacheEntry<List<TransitRoute>> cacheEntry = transitRoutesCache.get(cacheKey);
+        if (cacheEntry != null && !cacheEntry.isExpired()) {
+            return cacheEntry.getData();
         }
 
         KdNode NodeStart = kdTreeRoad.findNode(start);
         KdNode NodeEnd = kdTreeRoad.findNode(end);
 
-        if(k == 0) {
+        if (k == 0) {
             k = Constants.K_NEAREST_MAPPINGS.get(mode);
         }
         KDTree treeRef;
@@ -367,9 +369,8 @@ public class Query {
         List<KdNode> nearestStopsEnd = finderCore.getNearestNodes(treeRef, NodeEnd.getCoordinates(), k);
         List<FoundSolution> transitRoutes = finderCore.getTransitRoutes(nearestStopsStart, nearestStopsEnd, transitMap, mode);
 
-
         List<TransitRoute> transitroutes = new ArrayList<>();
-        for(FoundSolution solution: transitRoutes){
+        for (FoundSolution solution : transitRoutes) {
             KdNode roadNodeStart = kdTreeRoad.findNode(solution.getPossibleSolution().getStartNode().getCoordinates());
             KdNode roadNodeEnd = kdTreeRoad.findNode(solution.getPossibleSolution().getEndNode().getCoordinates());
 
@@ -388,7 +389,8 @@ public class Query {
             transitRoute.setDistanceEnd(pathDistanceEnd);
             transitroutes.add(transitRoute);
         }
-        transitRoutesCache.put(cacheKey, transitroutes);
+
+        transitRoutesCache.put(cacheKey, new CacheEntry<>(transitroutes,1));
         return transitroutes;
     }
 }

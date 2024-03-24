@@ -3,6 +3,7 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ecocompass.core.PathFinder.FinderCore;
+import org.ecocompass.core.util.CacheEntry;
 
 import java.util.*;
 
@@ -15,7 +16,7 @@ public class KDTree {
     private final KdNode root;
     private final int k;
 
-    private final Map<String, KdNode> nodeCache;
+    private final Map<String, CacheEntry<KdNode>> nodeCache;
 
     public KDTree(List<KdNode> nodes) {
         this.k = nodes.get(0).getCoordinates().length;
@@ -89,15 +90,16 @@ public class KDTree {
     public KdNode findNode(double[] point) {
         //logger.info("Finding nearest code to coordinates ({}, {})", point[0], point[1]);
         String cacheKey = Arrays.toString(point);
-        if (nodeCache.containsKey(cacheKey)) {
-            return nodeCache.get(cacheKey);
+        CacheEntry<KdNode> cacheEntry = nodeCache.get(cacheKey);
+        if (cacheEntry != null && !cacheEntry.isExpired()) {
+            return cacheEntry.getData();
         }
         KdNode exactMatch = findExactMatch(root, point, 0);
 
         if (exactMatch == null) {
             exactMatch = findNearestNeighbor(point);
         }
-        nodeCache.put(cacheKey, exactMatch);
+        nodeCache.put(cacheKey, new CacheEntry<>(exactMatch, 5));
         return exactMatch;
     }
 

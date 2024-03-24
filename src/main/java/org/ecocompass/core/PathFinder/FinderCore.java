@@ -4,6 +4,7 @@ import org.apache.commons.math3.util.FastMath;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.graph.Node;
+import org.ecocompass.core.util.CacheEntry;
 import org.ecocompass.core.util.Constants;
 import org.ecocompass.core.util.FoundSolution;
 import org.ecocompass.core.util.PossibleSolution;
@@ -20,8 +21,8 @@ public class FinderCore {
 
     private static final Logger logger = LogManager.getLogger(FinderCore.class);
 
-    private Map<String, KdNode> nodeCache = new HashMap<>();
-    private Map<String, List<double[]>> shortestPathCache = new HashMap<>();
+    private Map<String, CacheEntry<KdNode>> nodeFromIdCache = new HashMap<>();
+    private Map<String, CacheEntry<List<double[]>>> shortestPathCache = new HashMap<>();
 
     public double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
         double R = 6371.0;
@@ -62,12 +63,12 @@ public class FinderCore {
     }
 
     private KdNode getNodeFromID(String id, JSONObject roadMap) {
-        KdNode cachedNode = nodeCache.get(id);
-        if (cachedNode != null) {
-            return cachedNode;
+        CacheEntry<KdNode> cachedNode = nodeFromIdCache.get(id);
+        if (cachedNode != null && !cachedNode.isExpired()) {
+            return cachedNode.getData();
         }
         KdNode newNode = getKdNode(roadMap, id);
-        nodeCache.put(id, newNode);
+        nodeFromIdCache.put(id, new CacheEntry<>(newNode, 5));
         return newNode;
     }
 
@@ -88,9 +89,9 @@ public class FinderCore {
 
     public List<double[]> getShortestPathRoad(KdNode start, KdNode goal, JSONObject roadMap) {
         String cacheKey = Arrays.toString(start.getCoordinates()) + Arrays.toString(goal.getCoordinates());
-        List<double[]> pathCached = shortestPathCache.get(cacheKey);
-        if (pathCached != null) {
-            return pathCached;
+        CacheEntry<List<double[]>> cacheEntry = shortestPathCache.get(cacheKey);
+        if (cacheEntry != null && !cacheEntry.isExpired()) {
+            return cacheEntry.getData();
         }
 
         PriorityQueue<NodeWrapper> openSet = new PriorityQueue<>(Comparator.comparingDouble(n -> n.fScore));
@@ -118,7 +119,7 @@ public class FinderCore {
                     currentID = cameFrom.get(currentID);
                 }
                 Collections.reverse(path);
-                shortestPathCache.put(cacheKey, path);
+                shortestPathCache.put(cacheKey, new CacheEntry<>(path, 1));
                 return path;
             }
 
@@ -145,7 +146,8 @@ public class FinderCore {
                 }
             }
         }
-        shortestPathCache.put(cacheKey, null);
+
+        shortestPathCache.put(cacheKey, new CacheEntry<>(null, 1));
         return null;
     }
 
@@ -202,7 +204,7 @@ public class FinderCore {
                 DayOfWeek dayOfWeek = timeNow.getDayOfWeek();
                 int weekdayValue = dayOfWeek.getValue();
 
-                List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue);
+                List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue-1);
 
                 for (PossibleSolution solution : possibleSolutions) {
                     for (String route : solution.getTransitionSet()) {
