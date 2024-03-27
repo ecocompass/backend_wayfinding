@@ -14,10 +14,11 @@ postgresql:
 
 spring:
   datasource:
-    url: jdbc:postgresql://${postgresql.api.host}:${postgresql.api.port}/${postgresql.api.dbName}
-    username: ${postgresql.api.dbUserName}
-    password: ${postgresql.api.dbPassword}
+    url: jdbc:postgresql://${POSTGRES_HOST_NAME:${postgresql.api.host}}:${POSTGRES_PORT:${postgresql.api.port}}/${POSTGRES_DB:${postgresql.api.dbName}}
+    username: ${POSTGRES_USER:${postgresql.api.dbUserName}}
+    password: ${POSTGRES_PASSWORD:${postgresql.api.dbPassword}}
     driver-class-name: org.postgresql.Driver
+
 
   resources:
     gtfsFile: classpath:data/consolidated_gtfs.json
