@@ -1,10 +1,13 @@
-FROM ubuntu:latest
-LABEL authors="rahul"
+# Phase 1: Build stage
+FROM openjdk:11-jdk-slim AS builder
+WORKDIR /app
+COPY . .
+RUN chmod +x gradlew
+RUN ./gradlew build
 
-ENTRYPOINT ["top", "-b"]
+# Phase 2: Deploy App
+FROM openjdk:11-jdk-slim
+WORKDIR /app
+COPY --from=builder /app/build/libs/MapEngine-1.0-SNAPSHOT.jar /app/map-engine.jar
 
-FROM adoptopenjdk/openjdk11:alpine
-
-COPY build/libs/MapEngine-1.0-SNAPSHOT.jar /app.jar
-
-CMD ["java", "-jar", "/app.jar"]
+CMD ["java", "-Xmx5g", "-jar", "/app/map-engine.jar"]
