@@ -219,7 +219,11 @@ public class Query {
         double directRoadDistance = finderCore.getRouteDistance(roadRouteStartEnd);
         logger.info("A-star distance: {}", directRoadDistance);
 
-        /*
+        List<List<TransitRoute>> luasSols = new ArrayList<>();
+        List<List<TransitRoute>> busSols = new ArrayList<>();
+        List<List<TransitRoute>> busSplitSols = new ArrayList<>();
+        List<List<List<TransitRoute>>> result = new ArrayList<>();
+
         CompletableFuture<List<List<TransitRoute>>> luasSolsFuture =
                 CompletableFuture.supplyAsync(() -> getLuasSols(start, end));
         CompletableFuture<List<List<TransitRoute>>> busSolsFuture =
@@ -240,12 +244,7 @@ public class Query {
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error in getTransitRoutes MultiThreading Collecting: " + e.getMessage());
         }
-        */
 
-        List<List<TransitRoute>> luasSols = getLuasSols(start, end);
-        List<List<TransitRoute>> busSols = getBusSols(start, end, directRoadDistance);
-        List<List<TransitRoute>> busSplitSols = getBusSplitSols(start, end, roadRouteStartEnd);
-        List<List<List<TransitRoute>>> result = new ArrayList<>();
         result.add(luasSols);
         result.add(busSols);
         result.add(busSplitSols);
