@@ -13,6 +13,8 @@ import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,10 +55,9 @@ public class FinderCore {
     }
 
     public List<KdNode> getNearestNodes(KDTree tree, double[] point, int k) {
-        PriorityQueue<KDTree.NodeWithDistance> newPq = new PriorityQueue<>();
-        newPq = tree.kNearestNeighbors(tree.getRoot(), point, 0, k, newPq);
+        PriorityQueue<KDTree.NodeWithDistance> pq = tree.kNearestNeighbors(tree.getRoot(), point, 0, k, new PriorityQueue<>());
         List<KdNode> neighbors = new ArrayList<>();
-        for (KDTree.NodeWithDistance nwd : newPq) {
+        for (KDTree.NodeWithDistance nwd : pq) {
             neighbors.add(nwd.node);
         }
         return neighbors;
@@ -193,11 +194,11 @@ public class FinderCore {
 
     public List<FoundSolution> getTransitRoutes(List<KdNode> nearestStopsStart, List<KdNode> nearestStopsEnd,
                                                    JSONObject transitMap, String mode) {
-        List<PossibleSolution> possibleSolutions = new ArrayList<>();
+
         List<FoundSolution> connectedSolutions = new ArrayList<>();
         for (KdNode startStop : nearestStopsStart) {
             for (KdNode endStop : nearestStopsEnd) {
-                getPossibleSolutions(transitMap, mode, startStop, endStop, possibleSolutions);
+                List<PossibleSolution> possibleSolutions = getPossibleSolutions(transitMap, mode, startStop, endStop);
 
                 ZoneId dublinZone = ZoneId.of("Europe/Dublin");
                 ZonedDateTime timeNow = ZonedDateTime.now(dublinZone);
@@ -227,6 +228,9 @@ public class FinderCore {
                                             solution, route, currentServiceId, distance, route0, trace, modeRouteFromStops);
                                     continue;
                                 }
+                                else {
+                                    logger.info("  {route_0}: No route found using service id");
+                                }
                             }
 
                             String route1 = route + "_1";
@@ -244,6 +248,8 @@ public class FinderCore {
                                     if (currentServiceId != 0) {
                                         addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop, timeNow,
                                                 solution, route, currentServiceId, distance, route1, trace, modeRouteFromStops);
+                                    } else {
+                                        logger.info("  {route_1}: No route found using service id");
                                     }
                                 }
                             }
@@ -281,11 +287,11 @@ public class FinderCore {
         return stopIds;
     }
 
-    private static void getPossibleSolutions(JSONObject transitMap, String mode, KdNode startStop, KdNode endStop,
-                                             List<PossibleSolution> possibleSolutions) {
+    private static List<PossibleSolution> getPossibleSolutions(JSONObject transitMap, String mode, KdNode startStop, KdNode endStop) {
         JSONObject startStopNode = transitMap.getJSONObject(mode + "_stops").getJSONObject(String.valueOf(startStop.getNodeID()));
         JSONObject endStopNode = transitMap.getJSONObject(mode + "_stops").getJSONObject(String.valueOf(endStop.getNodeID()));
 
+        List<PossibleSolution> possibleSolutions = new ArrayList<>();
         if (startStopNode != null && endStopNode != null) {
             JSONObject startStopRoutes = startStopNode.getJSONObject("routes");
             JSONObject endStopRoutes = endStopNode.getJSONObject("routes");
@@ -302,6 +308,7 @@ public class FinderCore {
             }
 
         }
+        return possibleSolutions;
     }
 
     private void addRouteWaitTimes(JSONObject transitMap, String mode, List<FoundSolution> connectedSolutions,
@@ -342,13 +349,8 @@ public class FinderCore {
             trace.addAll(getRouteSection(modeShape, startStop.getCoordinates(), endStop.getCoordinates()));
             trace.add(endStop.getCoordinates());
 
-            double[] prev = null;
-            for (double[] transitPoint : trace) {
-                if (prev != null) {
-                    distance += haversineDistance(transitPoint[0], transitPoint[1], prev[0], prev[1]);
-                }
-                prev = transitPoint;
-            }
+            distance+= getRouteDistance(trace);
+
             FoundSolution foundSolution = new FoundSolution();
             foundSolution.setPossibleSolution(solution);
             foundSolution.setRoute(route);

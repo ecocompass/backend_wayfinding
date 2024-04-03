@@ -54,11 +54,11 @@ public class RoutesController {
     public ResponseEntity<TransitionRouteResponse> getShortestPath2(
             @RequestParam double[] startCoordinates,
             @RequestParam double[] endCoordinates
-    ) {
+    ) throws Exception {
         // Swap the coordinates (lon, lat instead of lat, lon)
         double[] startSwapped = {startCoordinates[1], startCoordinates[0]};
         double[] endSwapped = {endCoordinates[1], endCoordinates[0]};
 
-        return ResponseEntity.ok(query.getTransitRecommendations(startSwapped, endSwapped));
+        return ResponseEntity.ok(query.getTransitRecommendations(startSwapped, endSwapped, graph));
     }
 }
