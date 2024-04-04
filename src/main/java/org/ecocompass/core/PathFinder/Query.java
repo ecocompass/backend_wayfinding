@@ -7,6 +7,8 @@ import org.ecocompass.api.utility.PathWithMode;
 import org.ecocompass.api.utility.RecommendationPath;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
+import org.ecocompass.core.graph.Graph;
+import org.ecocompass.core.graph.Node;
 import org.ecocompass.core.util.CacheEntry;
 import org.ecocompass.core.util.Constants;
 import org.ecocompass.core.util.FoundSolution;
@@ -60,13 +62,26 @@ public class Query {
         transitRoutesCache = new HashMap<>();
     }
 
-    public TransitionRouteResponse getTransitRecommendations(double[] start, double[] end){
+    public TransitionRouteResponse getTransitRecommendations(double[] start, double[] end, Graph graph) throws Exception {
 
         List<List<List<TransitRoute>>> transitionRoutes = getTransitRoutes(start, end);
         TransitionRouteResponse transitionRouteResponse = new TransitionRouteResponse();
+
+        KdNode startNode = kdTreeRoad.findNode(start);
+        KdNode endNode = kdTreeRoad.findNode(end);
+        List<Node> shortestPathNodes = graph.shortestPath(startNode.getNodeID(), endNode.getNodeID(), "road");
+        List<double[]> shortestPathCoordinates = graph.extractCoordinates(shortestPathNodes);
+        double shortestDistance = finderCore.getRouteDistance(shortestPathCoordinates);
+
         RecommendationPath recommendation = new RecommendationPath();
-        for(List<TransitRoute> busLuasRoute : transitionRoutes.get(0)){
-            if(Objects.equals(busLuasRoute.get(0).getMode(), "luas")){
+        if(shortestDistance < 3L) {
+            addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
+            transitionRouteResponse.addRecommendation(recommendation);
+        }
+
+        recommendation = new RecommendationPath();
+        for(List<TransitRoute> busLuasRoute : transitionRoutes.get(0)) {
+            if (Objects.equals(busLuasRoute.get(0).getMode(), "luas")) {
                 addPathModeWalkMode(busLuasRoute, 0, recommendation, true);
                 addPathModeRoute(busLuasRoute, 0, recommendation, "luas");
             } else {
@@ -75,16 +90,15 @@ public class Query {
                 addPathModeWalkNext(busLuasRoute, recommendation);
                 addPathModeRoute(busLuasRoute, 1, recommendation, "luas");
             }
-            int lastIndex = busLuasRoute.size()-1;
-            if(Objects.equals(busLuasRoute.get(lastIndex).getMode(), "luas")){
+            int lastIndex = busLuasRoute.size() - 1;
+            if (Objects.equals(busLuasRoute.get(lastIndex).getMode(), "luas")) {
                 addPathModeWalkMode(busLuasRoute, lastIndex, recommendation, false);
             } else {
                 addPathModeWalkMode(busLuasRoute, lastIndex, recommendation, true);
                 addPathModeRoute(busLuasRoute, lastIndex, recommendation, "bus");
-                addPathModeWalkMode(busLuasRoute,  lastIndex, recommendation, false);
+                addPathModeWalkMode(busLuasRoute, lastIndex, recommendation, false);
             }
         }
-
         transitionRouteResponse.addRecommendation(recommendation);
 
         recommendation = new RecommendationPath();
@@ -104,7 +118,37 @@ public class Query {
             addPathModeWalkMode(busRoute, 1, recommendation, false);
         }
         transitionRouteResponse.addRecommendation(recommendation);
+
+        recommendation = new RecommendationPath();
+        addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "car");
+        transitionRouteResponse.addRecommendation(recommendation);
+
+        recommendation = new RecommendationPath();
+        addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "bike");
+        transitionRouteResponse.addRecommendation(recommendation);
+
+        if(shortestDistance > 3L) {
+            recommendation = new RecommendationPath();
+            addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
+            transitionRouteResponse.addRecommendation(recommendation);
+        }
+
         return transitionRouteResponse;
+    }
+
+    private void addPathModeRoutsRoad(RecommendationPath recommendation, List<double[]> shortestPathCoordinates,
+                                      double shortestDistance, String mode) {
+        PathWithMode path = new PathWithMode();
+        path.setMode(mode);
+        path.setStartStopName(mode);
+        path.setEndStopName(mode);
+        path.setModeNumber(mode);
+        path.setRouteNumber(mode);
+        path.setTimeStamp(0L);
+        path.setPathPointList(swapCoordinates(shortestPathCoordinates));
+        path.setDistance(shortestDistance);
+        recommendation.addPath(path);
+        recommendation.addTransition(mode);
     }
 
     private static void addPathModeRoute(List<TransitRoute> route, int lastIndex,
@@ -164,8 +208,9 @@ public class Query {
     }
 
     public List<List<List<TransitRoute>>> getTransitRoutes(double[] start, double[] end) {
+        logger.info("[Compute transit route from {} to {}]", Arrays.toString(start), Arrays.toString(end));
         double straightLineDistance = finderCore.haversineDistance(start[0], start[1], end[0], end[1]);
-        logger.debug("Straight Line distance: {} ", straightLineDistance);
+        logger.info("Straight Line distance: {} ", straightLineDistance);
 
         KdNode nodeStart = kdTreeRoad.findNode(start);
         KdNode nodeEnd = kdTreeRoad.findNode(end);
@@ -173,6 +218,11 @@ public class Query {
         List<double[]> roadRouteStartEnd = finderCore.getShortestPathRoad(nodeStart, nodeEnd, roadMap);
         double directRoadDistance = finderCore.getRouteDistance(roadRouteStartEnd);
         logger.info("A-star distance: {}", directRoadDistance);
+
+        List<List<TransitRoute>> luasSols = new ArrayList<>();
+        List<List<TransitRoute>> busSols = new ArrayList<>();
+        List<List<TransitRoute>> busSplitSols = new ArrayList<>();
+        List<List<List<TransitRoute>>> result = new ArrayList<>();
 
         CompletableFuture<List<List<TransitRoute>>> luasSolsFuture =
                 CompletableFuture.supplyAsync(() -> getLuasSols(start, end));
@@ -187,9 +237,6 @@ public class Query {
             logger.error("Error in getTransitRoutes MultiThreading Launching: " + e.getMessage());
         }
 
-        List<List<TransitRoute>> luasSols = null;
-        List<List<TransitRoute>> busSols = null;
-        List<List<TransitRoute>> busSplitSols = null;
         try {
             luasSols = luasSolsFuture.get();
             busSols = busSolsFuture.get();
@@ -198,7 +245,6 @@ public class Query {
             logger.error("Error in getTransitRoutes MultiThreading Collecting: " + e.getMessage());
         }
 
-        List<List<List<TransitRoute>>> result = new ArrayList<>();
         result.add(luasSols);
         result.add(busSols);
         result.add(busSplitSols);
@@ -207,13 +253,15 @@ public class Query {
 
     private List<List<TransitRoute>> getBusSplitSols(double[] start, double[] end, List<double[]> roadRouteStartEnd) {
         List<List<TransitRoute>> busSplitSols = new ArrayList<>();
+        logger.info("[Middle point between {} and {}]", Arrays.toString(start), Arrays.toString(end));
         double[] midStop = roadRouteStartEnd.get(roadRouteStartEnd.size() / 2);
         int k_fh = Constants.K_NEAREST_MAPPINGS.get("bus");
         List<TransitRoute> firstHalves = new ArrayList<>();
-        while(firstHalves.isEmpty() && k_fh <= 30){
-            logger.debug("------------------ BUS SPLIT FH -----------------------");
+        while(firstHalves.isEmpty() && k_fh <= 60){
+            logger.info("------------------ BUS SPLIT FH -----------------------");
             firstHalves= getTransitRoutes(start, midStop, "bus", k_fh);
             if(!firstHalves.isEmpty()){
+                logger.info("First halves original (will considered best 5): {}", firstHalves.size());
                 sortSolList(firstHalves);
                 firstHalves = firstHalves.subList(0, Math.min(5, firstHalves.size()));
 
@@ -221,10 +269,11 @@ public class Query {
                     double[] endStop = busRoute.getFoundSolution().getPossibleSolution().getEndNode().getCoordinates();
                     List<TransitRoute> secondHalves = new ArrayList<>();
                     int k_sh = Constants.K_NEAREST_MAPPINGS.get("bus");
-                    while(secondHalves.isEmpty() && k_sh <=30){
-                        logger.debug("------------------ BUS SPLIT SH -----------------------");
+                    while(secondHalves.isEmpty() && k_sh <= 60){
+                        logger.info("------------------ BUS SPLIT SH -----------------------");
                         secondHalves= getTransitRoutes(endStop, end, "bus", k_sh);
                         if(!secondHalves.isEmpty()) {
+                            logger.info("Second halves original (will considered best 5): {}", firstHalves.size());
                             sortSolList(secondHalves);
                             for(TransitRoute route: secondHalves){
                                 List<TransitRoute> combinedRoute = new ArrayList<>();
@@ -253,8 +302,8 @@ public class Query {
         List<List<TransitRoute>> busSols = new ArrayList<>();
         List<TransitRoute> busRoutes;
         int k = Constants.K_NEAREST_MAPPINGS.get("bus");
-        while(busSols.isEmpty() && k<=30){
-            logger.debug("------------------ BUS SHRINK -----------------------");
+        while(busSols.isEmpty() && k<=60){
+            logger.info("------------------ BUS SHRINK -----------------------");
             busRoutes = getTransitRoutes(start, end, "bus", k);
             if(!busRoutes.isEmpty()){
                 for(TransitRoute busRoute : busRoutes){
@@ -270,15 +319,21 @@ public class Query {
         }
 
         sortSolsList(busSols);
+        logger.info("-----------------------");
         return busSols.subList(0, Math.min(1, busSols.size()));
     }
 
     private List<List<TransitRoute>> getLuasSols(double[] start, double[] end) {
         List<List<TransitRoute>> luasSols = new ArrayList<>();
-        logger.debug("------------------ LUAS -----------------------");
+        logger.info("------------------ LUAS -----------------------");
         List<TransitRoute> luasRoutes = getTransitRoutes(start, end, "luas", 0);
 
         for(TransitRoute luasRoute: luasRoutes){
+            logger.info("    Label: {}\\n    Route length: {}\\n    Wait time: \"\n" +
+                    "                      f\"{}\\n    Start offset: {}\"\n" +
+                    "                      f\"\\n    End offset: {}\\n", luasRoute.getFoundSolution().getRoute(),
+                    luasRoute.getFoundSolution().getDistance(), luasRoute.getFoundSolution().getWaitTime().toString(),
+                    luasRoute.getDistanceStart(), luasRoute.getDistanceEnd());
             List<TransitRoute> luasSol = new ArrayList<>();
             List<TransitRoute> busSol = new ArrayList<>();
             List<TransitRoute> busRoutes = getTransitRoutes(start,
@@ -293,6 +348,7 @@ public class Query {
             luasSols.add(luasSol);
         }
         sortSolsList(luasSols);
+        logger.info("-----------------------------------------");
         return luasSols.subList(0, Math.min(1, luasSols.size()));
     }
 
@@ -301,6 +357,11 @@ public class Query {
         if (!busRoutes.isEmpty()) {
             for (TransitRoute busRoute : busRoutes) {
                 if (busRoute.getDistanceStart() + busRoute.getDistanceEnd() < luasRoute - 0.5) {
+                    logger.info("    Label: {}\\n    Route length: {}\\n    Wait time: \"\n" +
+                                    "                      f\"{}\\n    Start offset: {}\"\n" +
+                                    "                      f\"\\n    End offset: {}\\n", busRoute.getFoundSolution().getRoute(),
+                            busRoute.getFoundSolution().getDistance(), busRoute.getFoundSolution().getWaitTime().toString(),
+                            busRoute.getDistanceStart(), busRoute.getDistanceEnd());
                     busSol.add(busRoute);
                 }
             }
@@ -341,6 +402,7 @@ public class Query {
 
 
     public List<TransitRoute> getTransitRoutes(double[] start, double[] end, String mode, int k) {
+        logger.info(" *Transit route with mode {}*", mode);
         String cacheKey = Arrays.toString(start) + Arrays.toString(end) + mode + k;
         CacheEntry<List<TransitRoute>> cacheEntry = transitRoutesCache.get(cacheKey);
         if (cacheEntry != null && !cacheEntry.isExpired()) {
@@ -365,9 +427,11 @@ public class Query {
             throw new IllegalArgumentException("Invalid mode: " + mode);
         }
 
-        List<KdNode> nearestStopsStart = finderCore.getNearestNodes(treeRef, NodeStart.getCoordinates(), k);
-        List<KdNode> nearestStopsEnd = finderCore.getNearestNodes(treeRef, NodeEnd.getCoordinates(), k);
+        List<KdNode> nearestStopsStart = finderCore.getNearestNodes(treeRef, start, k);
+        List<KdNode> nearestStopsEnd = finderCore.getNearestNodes(treeRef, end, k);
         List<FoundSolution> transitRoutes = finderCore.getTransitRoutes(nearestStopsStart, nearestStopsEnd, transitMap, mode);
+
+        logger.info(" Found {} routes", transitRoutes.size());
 
         List<TransitRoute> transitroutes = new ArrayList<>();
         for (FoundSolution solution : transitRoutes) {
