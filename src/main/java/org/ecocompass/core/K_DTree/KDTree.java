@@ -88,7 +88,7 @@ public class KDTree {
     }
 
     public KdNode findNode(double[] point) {
-        logger.debug("Finding nearest code to coordinates ({}, {})", point[0], point[1]);
+        //logger.info("Finding nearest code to coordinates ({}, {})", point[0], point[1]);
         String cacheKey = Arrays.toString(point);
         CacheEntry<KdNode> cacheEntry = nodeCache.get(cacheKey);
         if (cacheEntry != null && !cacheEntry.isExpired()) {
