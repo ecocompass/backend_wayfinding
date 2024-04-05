@@ -6,11 +6,11 @@ openweathermap:
 
 postgresql:
   api:
-    host: 140.238.228.234
-    port: 8086
-    dbName: postgres
-    dbUserName: pastav
-    dbPassword: ase123pastav
+    host: IP
+    port: PORT
+    dbName: DBNAME
+    dbUserName: USERNAME
+    dbPassword: PASSWORD
 
 spring:
   datasource:
