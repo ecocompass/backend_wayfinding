@@ -20,8 +20,7 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 
 public class Query {
 
@@ -64,14 +63,25 @@ public class Query {
 
     public TransitionRouteResponse getTransitRecommendations(double[] start, double[] end, Graph graph) throws Exception {
 
-        List<List<List<TransitRoute>>> transitionRoutes = getTransitRoutes(start, end);
-        TransitionRouteResponse transitionRouteResponse = new TransitionRouteResponse();
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
 
-        KdNode startNode = kdTreeRoad.findNode(start);
-        KdNode endNode = kdTreeRoad.findNode(end);
-        List<Node> shortestPathNodes = graph.shortestPath(startNode.getNodeID(), endNode.getNodeID(), "road");
+        Callable<List<List<List<TransitRoute>>>> transitRoutesTask = () -> getTransitRoutes(start, end);
+        Callable<List<Node>> shortestPathTask = () -> {
+            KdNode startNode = kdTreeRoad.findNode(start);
+            KdNode endNode = kdTreeRoad.findNode(end);
+            return graph.shortestPath(startNode.getNodeID(), endNode.getNodeID(), "road");
+        };
+
+        Future<List<List<List<TransitRoute>>>> transitRoutesFuture = executorService.submit(transitRoutesTask);
+        Future<List<Node>> shortestPathFuture = executorService.submit(shortestPathTask);
+
+        List<List<List<TransitRoute>>> transitionRoutes = transitRoutesFuture.get();
+        List<Node> shortestPathNodes = shortestPathFuture.get();
+
         List<double[]> shortestPathCoordinates = graph.extractCoordinates(shortestPathNodes);
         double shortestDistance = finderCore.getRouteDistance(shortestPathCoordinates);
+
+        TransitionRouteResponse transitionRouteResponse = new TransitionRouteResponse();
 
         RecommendationPath recommendation = new RecommendationPath();
         if(shortestDistance < 3L) {
@@ -145,7 +155,7 @@ public class Query {
         path.setModeNumber(mode);
         path.setRouteNumber(mode);
         path.setTimeStamp(0L);
-        path.setPathPointList(swapCoordinates(shortestPathCoordinates));
+        path.setPathPointList(shortestPathCoordinates);
         path.setDistance(shortestDistance);
         recommendation.addPath(path);
         recommendation.addTransition(mode);
