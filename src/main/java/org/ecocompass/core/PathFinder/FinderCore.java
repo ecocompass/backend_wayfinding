@@ -12,9 +12,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.FileWriter;
-import java.io.IOException;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -242,7 +239,7 @@ public class FinderCore {
                                     continue;
                                 }
                                 else {
-                                    logger.info("  {route_0}: No route found using service id");
+                                    logger.debug("  {route_0}: No route found using service id");
                                 }
                             }
 
@@ -262,7 +259,7 @@ public class FinderCore {
                                         addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop,
                                                 solution, route, currentServiceId, distance, route1, trace, modeRouteFromStops, waitTimeOffset);
                                     } else {
-                                        logger.info("  {route_1}: No route found using service id");
+                                        logger.debug("  {route_1}: No route found using service id");
                                     }
                                 }
                             }

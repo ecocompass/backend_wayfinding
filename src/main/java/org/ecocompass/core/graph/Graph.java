@@ -52,7 +52,7 @@ public class Graph {
     }
 
     public List<Node> shortestPath(String startNodeId, String endNodeId, String transportType) throws Exception {
-        logger.info("Computing shortest-path from '{}' to '{}' over '{}'", startNodeId, endNodeId, transportType);
+        logger.debug("Computing shortest-path from '{}' to '{}' over '{}'", startNodeId, endNodeId, transportType);
         PriorityQueue<NodeRecord> openList = new PriorityQueue<>(Comparator.comparingDouble(nr -> nr.estimatedTotalCost));
         Map<String, NodeRecord> closedList = new HashMap<>();
 
@@ -119,7 +119,7 @@ public class Graph {
     }
 
     public List<double[]> extractCoordinates(List<Node> nodes) {
-        logger.info("Extracting coordinates as list from Node list");
+        logger.debug("Extracting coordinates as list from Node list");
         List<double[]> coordinates = new ArrayList<>();
 
         for (Node node : nodes) {
