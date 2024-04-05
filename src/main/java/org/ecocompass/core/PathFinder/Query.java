@@ -19,6 +19,7 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -145,7 +146,7 @@ public class Query {
         path.setModeNumber(mode);
         path.setRouteNumber(mode);
         path.setTimeStamp(0L);
-        path.setPathPointList(swapCoordinates(shortestPathCoordinates));
+        path.setPathPointList(shortestPathCoordinates);
         path.setDistance(shortestDistance);
         recommendation.addPath(path);
         recommendation.addTransition(mode);
@@ -251,6 +252,11 @@ public class Query {
         return result;
     }
 
+    private Long updateWaitTime(Long waitTime, List<TransitRoute> firsthalf){
+        waitTime += firsthalf.get(0).getFoundSolution().getWaitTime().get(0);
+        return waitTime;
+    }
+
     private List<List<TransitRoute>> getBusSplitSols(double[] start, double[] end, List<double[]> roadRouteStartEnd) {
         List<List<TransitRoute>> busSplitSols = new ArrayList<>();
         logger.info("[Middle point between {} and {}]", Arrays.toString(start), Arrays.toString(end));
@@ -259,7 +265,8 @@ public class Query {
         List<TransitRoute> firstHalves = new ArrayList<>();
         while(firstHalves.isEmpty() && k_fh <= 60){
             logger.info("------------------ BUS SPLIT FH -----------------------");
-            firstHalves= getTransitRoutes(start, midStop, "bus", k_fh);
+            Long waitTime = 0L;
+            firstHalves= getTransitRoutes(start, midStop, "bus", k_fh, waitTime);
             if(!firstHalves.isEmpty()){
                 logger.info("First halves original (will considered best 5): {}", firstHalves.size());
                 sortSolList(firstHalves);
@@ -271,29 +278,26 @@ public class Query {
                     int k_sh = Constants.K_NEAREST_MAPPINGS.get("bus");
                     while(secondHalves.isEmpty() && k_sh <= 60){
                         logger.info("------------------ BUS SPLIT SH -----------------------");
-                        secondHalves= getTransitRoutes(endStop, end, "bus", k_sh);
+                        waitTime = updateWaitTime(waitTime, firstHalves);
+                        secondHalves = getTransitRoutes(endStop, end, "bus", k_sh, waitTime);
                         if(!secondHalves.isEmpty()) {
                             logger.info("Second halves original (will considered best 5): {}", firstHalves.size());
                             sortSolList(secondHalves);
-                            for(TransitRoute route: secondHalves){
+                            for(TransitRoute route: secondHalves) {
                                 List<TransitRoute> combinedRoute = new ArrayList<>();
                                 combinedRoute.add(busRoute);
                                 combinedRoute.add(route);
                                 busSplitSols.add(combinedRoute);
                             }
-
                         } else {
                             k_sh *= 2;
                         }
                     }
-
                 }
-
             } else {
                 k_fh *= 2;
             }
         }
-
         sortSolsList(busSplitSols);
         return busSplitSols.subList(0, Math.min(1, busSplitSols.size()));
     }
@@ -304,7 +308,8 @@ public class Query {
         int k = Constants.K_NEAREST_MAPPINGS.get("bus");
         while(busSols.isEmpty() && k<=60){
             logger.info("------------------ BUS SHRINK -----------------------");
-            busRoutes = getTransitRoutes(start, end, "bus", k);
+            Long waitTime = 0L;
+            busRoutes = getTransitRoutes(start, end, "bus", k, waitTime);
             if(!busRoutes.isEmpty()){
                 for(TransitRoute busRoute : busRoutes){
                     if(busRoute.getFoundSolution().getDistance() < (1.1 * directRoadDistance)){
@@ -326,7 +331,8 @@ public class Query {
     private List<List<TransitRoute>> getLuasSols(double[] start, double[] end) {
         List<List<TransitRoute>> luasSols = new ArrayList<>();
         logger.info("------------------ LUAS -----------------------");
-        List<TransitRoute> luasRoutes = getTransitRoutes(start, end, "luas", 0);
+        Long waitTime = 0L;
+        List<TransitRoute> luasRoutes = getTransitRoutes(start, end, "luas", 0, waitTime);
 
         for(TransitRoute luasRoute: luasRoutes){
             logger.info("    Label: {}\\n    Route length: {}\\n    Wait time: \"\n" +
@@ -336,14 +342,15 @@ public class Query {
                     luasRoute.getDistanceStart(), luasRoute.getDistanceEnd());
             List<TransitRoute> luasSol = new ArrayList<>();
             List<TransitRoute> busSol = new ArrayList<>();
+            waitTime = luasRoute.getFoundSolution().getWaitTime().get(0);
             List<TransitRoute> busRoutes = getTransitRoutes(start,
-                    luasRoute.getFoundSolution().getPossibleSolution().getStartNode().getCoordinates(), "bus", 0);
+                    luasRoute.getFoundSolution().getPossibleSolution().getStartNode().getCoordinates(), "bus", 0, waitTime);
             updateLuasSol(busRoutes, luasRoute.getDistanceStart(), busSol, luasSol);
             luasSol.add(luasRoute);
 
             busSol = new ArrayList<>();
             busRoutes = getTransitRoutes(luasRoute.getFoundSolution().getPossibleSolution().getEndNode().getCoordinates(),
-                    end, "bus",0);
+                    end, "bus",0, waitTime);
             updateLuasSol(busRoutes, luasRoute.getDistanceEnd(), busSol, luasSol);
             luasSols.add(luasSol);
         }
@@ -401,7 +408,7 @@ public class Query {
     }
 
 
-    public List<TransitRoute> getTransitRoutes(double[] start, double[] end, String mode, int k) {
+    public List<TransitRoute> getTransitRoutes(double[] start, double[] end, String mode, int k, Long waitTime) {
         logger.info(" *Transit route with mode {}*", mode);
         String cacheKey = Arrays.toString(start) + Arrays.toString(end) + mode + k;
         CacheEntry<List<TransitRoute>> cacheEntry = transitRoutesCache.get(cacheKey);
@@ -429,7 +436,8 @@ public class Query {
 
         List<KdNode> nearestStopsStart = finderCore.getNearestNodes(treeRef, start, k);
         List<KdNode> nearestStopsEnd = finderCore.getNearestNodes(treeRef, end, k);
-        List<FoundSolution> transitRoutes = finderCore.getTransitRoutes(nearestStopsStart, nearestStopsEnd, transitMap, mode);
+        List<FoundSolution> transitRoutes = finderCore.getTransitRoutes(nearestStopsStart, nearestStopsEnd,
+                                                    transitMap, mode, NodeStart, roadMap, waitTime);
 
         logger.info(" Found {} routes", transitRoutes.size());
 
