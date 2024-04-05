@@ -5,6 +5,7 @@ import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.PathFinder.FinderCore;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
+import org.ecocompass.core.util.KdNodeCache;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -152,13 +153,13 @@ public class Overpass {
             try (InputStream transitDataStream = roadDataResource.getInputStream()) {
                 String transitData = new String(transitDataStream.readAllBytes());
                 JSONObject jsonObject = new JSONObject(transitData);
-                return finderCore.buildKDTree(jsonObject);
+                return finderCore.buildKDTree(jsonObject, mode);
             }
         } else {
             try (InputStream transitDataStream = gtfsResource.getInputStream()) {
                 String transitData = new String(transitDataStream.readAllBytes());
                 JSONObject jsonObject = new JSONObject(transitData);
-                return finderCore.buildKDTree(jsonObject.getJSONObject(mode + "_stops"));
+                return finderCore.buildKDTree(jsonObject.getJSONObject(mode + "_stops"), mode);
             }
         }
     }
