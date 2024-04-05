@@ -12,6 +12,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -189,27 +192,14 @@ public class FinderCore {
         return result;
     }
 
-    public Duration getWaitTimeInSeconds(double distance, String mode) {
-        double averageSpeed = Constants.AVERAGE_SPEEDS.get(mode);
-        double timeInHours = distance / averageSpeed;
-        long timeInSeconds = (long) (timeInHours * 3600);
-        return Duration.ofSeconds(timeInSeconds);
-    }
-
     public List<FoundSolution> getTransitRoutes(List<KdNode> nearestStopsStart, List<KdNode> nearestStopsEnd,
-                                                   JSONObject transitMap, String mode, KdNode NodeStart,
-                                                JSONObject roadMap, Long waitTime) {
+                                                   JSONObject transitMap, String mode) {
 
         List<FoundSolution> connectedSolutions = new ArrayList<>();
         for (KdNode startStop : nearestStopsStart) {
             for (KdNode endStop : nearestStopsEnd) {
-                Duration waitTimeOffset = Duration.ofSeconds(waitTime);
-                List<double[]> shortestPathListStart = getShortestPathRoad(NodeStart, startStop, roadMap);
-                if(shortestPathListStart != null) {
-                    double pathDistanceStart = getRouteDistance(shortestPathListStart);
-                    waitTimeOffset = waitTimeOffset.plus(getWaitTimeInSeconds(pathDistanceStart, "walk"));
-                }
                 List<PossibleSolution> possibleSolutions = getPossibleSolutions(transitMap, mode, startStop, endStop);
+
                 ZoneId dublinZone = ZoneId.of("Europe/Dublin");
                 ZonedDateTime timeNow = ZonedDateTime.now(dublinZone);
                 DayOfWeek dayOfWeek = timeNow.getDayOfWeek();
@@ -234,12 +224,12 @@ public class FinderCore {
                                 Set<String> modeRouteFromStopsSet = modeRouteFromStops.keySet();
                                 currentServiceId = getCurrentServiceId(validServiceIds, modeRouteFromStopsSet, currentServiceId);
                                 if (currentServiceId != 0) {
-                                    addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop,
-                                            solution, route, currentServiceId, distance, route0, trace, modeRouteFromStops, waitTimeOffset);
+                                    addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop, timeNow,
+                                            solution, route, currentServiceId, distance, route0, trace, modeRouteFromStops);
                                     continue;
                                 }
                                 else {
-                                    logger.debug("  {route_0}: No route found using service id");
+                                    logger.info("  {route_0}: No route found using service id");
                                 }
                             }
 
@@ -256,10 +246,10 @@ public class FinderCore {
                                     Set<String> modeRouteFromStopsSet = modeRouteFromStops.keySet();
                                     currentServiceId = getCurrentServiceId(validServiceIds, modeRouteFromStopsSet, currentServiceId);
                                     if (currentServiceId != 0) {
-                                        addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop,
-                                                solution, route, currentServiceId, distance, route1, trace, modeRouteFromStops, waitTimeOffset);
+                                        addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop, timeNow,
+                                                solution, route, currentServiceId, distance, route1, trace, modeRouteFromStops);
                                     } else {
-                                        logger.debug("  {route_1}: No route found using service id");
+                                        logger.info("  {route_1}: No route found using service id");
                                     }
                                 }
                             }
@@ -322,16 +312,15 @@ public class FinderCore {
     }
 
     private void addRouteWaitTimes(JSONObject transitMap, String mode, List<FoundSolution> connectedSolutions,
-                                   KdNode startStop, KdNode endStop, PossibleSolution solution,
+                                   KdNode startStop, KdNode endStop, ZonedDateTime timeNow, PossibleSolution solution,
                                    String route, Integer currentServiceId, double distance, String route1,
-                                   List<double[]> trace, JSONObject modeRouteFromStops, Duration  waitTimeOffset) {
+                                   List<double[]> trace, JSONObject modeRouteFromStops) {
         List<Long> waitTimes = new ArrayList<>();
         JSONArray service = modeRouteFromStops.getJSONArray(String.valueOf(currentServiceId));
         List<LocalTime> vehicleTimeList = getVehicleLocalTimes(service);
-        LocalTime currentTime = LocalTime.now(ZoneId.of("Europe/Dublin"));
-        LocalTime timeAtStop = currentTime.plus(waitTimeOffset);
+        LocalTime currentTime = timeNow.toLocalTime();
         for (LocalTime vehicleTime : vehicleTimeList) {
-            if (vehicleTime.isBefore(timeAtStop)) {
+            if (vehicleTime.isBefore(currentTime)) {
                 continue;
             }
 
@@ -390,13 +379,11 @@ public class FinderCore {
     public double getRouteDistance(List<double[]> route) {
         double totalDistance = 0;
         double[] prev = null;
-        if(!route.isEmpty()) {
-            for (double[] coords : route) {
-                if (prev != null) {
-                    totalDistance += haversineDistance(coords[0], coords[1], prev[0], prev[1]);
-                }
-                prev = coords;
+        for (double[] coords : route) {
+            if (prev != null) {
+                totalDistance += haversineDistance(coords[0], coords[1], prev[0], prev[1]);
             }
+            prev = coords;
         }
         return totalDistance;
     }
