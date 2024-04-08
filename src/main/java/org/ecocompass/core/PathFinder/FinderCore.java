@@ -25,6 +25,8 @@ public class FinderCore {
 
     private final Map<String, CacheEntry<List<double[]>>> shortestPathCache = new HashMap<>();
 
+    private final Map<String, CacheEntry<Double>> harvesianCache = new HashMap<>();
+
     public FinderCore(){
         this.nodeCache = new KdNodeCache();
     }
@@ -211,10 +213,12 @@ public class FinderCore {
                 List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue-1);
                 for (PossibleSolution solution : possibleSolutions) {
                     for (String route : solution.getTransitionSet()) {
-                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
-                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
-                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
-                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
+                        if(connectedSolutions.isEmpty()) {
+                            processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                                    route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
+                            processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                                    route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
+                        }
                     }
                 }
             }
