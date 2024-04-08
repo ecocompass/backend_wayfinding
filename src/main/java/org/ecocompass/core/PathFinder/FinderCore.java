@@ -213,12 +213,10 @@ public class FinderCore {
                 List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue-1);
                 for (PossibleSolution solution : possibleSolutions) {
                     for (String route : solution.getTransitionSet()) {
-                        if(connectedSolutions.isEmpty()) {
-                            processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
                                     route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
-                            processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
                                     route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
-                        }
                     }
                 }
             }
