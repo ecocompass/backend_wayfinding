@@ -125,8 +125,10 @@ public class Query {
             }
         }
         List<PathWithMode> pathWithModeList = luasrecommendation.getModePathList();
-        if(shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
-            transitionRouteResponse.addRecommendation(luasrecommendation);
+        if (!pathWithModeList.isEmpty()) {
+            if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                transitionRouteResponse.addRecommendation(luasrecommendation);
+            }
         }
 
         RecommendationPath busrecommendation = new RecommendationPath();
@@ -136,8 +138,10 @@ public class Query {
             addPathModeWalkMode(busRoute, 0, busrecommendation, false);
         }
         pathWithModeList = busrecommendation.getModePathList();
-        if(shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
-            transitionRouteResponse.addRecommendation(busrecommendation);
+        if (!pathWithModeList.isEmpty()) {
+            if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                transitionRouteResponse.addRecommendation(busrecommendation);
+            }
         }
 
         RecommendationPath busSplitrecommendation = new RecommendationPath();
@@ -149,8 +153,10 @@ public class Query {
             addPathModeWalkMode(busRoute, 1, busSplitrecommendation, false);
         }
         pathWithModeList = busSplitrecommendation.getModePathList();
-        if(shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
-            transitionRouteResponse.addRecommendation(busSplitrecommendation);
+        if (!pathWithModeList.isEmpty()) {
+            if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                transitionRouteResponse.addRecommendation(busSplitrecommendation);
+            }
         }
 
         recommendation = new RecommendationPath();
