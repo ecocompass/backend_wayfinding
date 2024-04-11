@@ -347,10 +347,9 @@ public class Query {
                         busSols.add(route);
                     }
                 }
-                if(busSols.isEmpty()){
-                    k *= 2;
-                }
-            } else {
+
+            }
+            if(busSols.isEmpty()){
                 k *= 2;
             }
         }
