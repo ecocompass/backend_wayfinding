@@ -31,20 +31,18 @@ public class FinderCore {
 
     public double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
         double R = 6371.0;
-
         lat1 = Math.toRadians(lat1);
         lon1 = Math.toRadians(lon1);
         lat2 = Math.toRadians(lat2);
         lon2 = Math.toRadians(lon2);
-
         double dLat = lat2 - lat1;
         double dLon = lon2 - lon1;
-
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
+
 
     public KDTree buildKDTree(JSONObject jsonObject, String mode) {
         List<KdNode> nodes = new ArrayList<>();
@@ -137,8 +135,8 @@ public class FinderCore {
             for (String neighborID : currentNeighborsList) {
                 KdNode neighbourNode = getNodeFromID(neighborID, roadMap);
                 double tentativeGScore = gScore.getOrDefault(current.nodeID, Double.POSITIVE_INFINITY) +
-                haversineDistance(startNode.getNode().latitude, startNode.getNode().longitude,
-                        neighbourNode.getNode().latitude, neighbourNode.getNode().longitude);
+                        haversineDistance(startNode.getNode().latitude, startNode.getNode().longitude,
+                                neighbourNode.getNode().latitude, neighbourNode.getNode().longitude);
                 if (tentativeGScore < gScore.getOrDefault(neighborID, Double.POSITIVE_INFINITY)) {
                     cameFrom.put(neighborID, current.nodeID);
                     gScore.put(neighborID, tentativeGScore);
@@ -194,7 +192,7 @@ public class FinderCore {
     }
 
     public List<FoundSolution> getTransitRoutes(List<KdNode> nearestStopsStart, List<KdNode> nearestStopsEnd, JSONObject transitMap,
-                                                String mode) {
+                                                String mode, Long waitTime, KdNode NodeStart, JSONObject roadMap) {
 
         List<FoundSolution> connectedSolutions = new ArrayList<>();
         JSONObject modeRoutes = transitMap.getJSONObject(mode + "_routes");
@@ -202,6 +200,7 @@ public class FinderCore {
 
         for (KdNode startStop : nearestStopsStart) {
             for (KdNode endStop : nearestStopsEnd) {
+                Duration waitTimeOffset = Duration.ofSeconds(waitTime);
                 List<PossibleSolution> possibleSolutions = getPossibleSolutions(transitMap, mode, startStop, endStop);
 
                 ZoneId dublinZone = ZoneId.of("Europe/Dublin");
@@ -210,13 +209,12 @@ public class FinderCore {
                 int weekdayValue = dayOfWeek.getValue();
 
                 List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue-1);
-
                 for (PossibleSolution solution : possibleSolutions) {
                     for (String route : solution.getTransitionSet()) {
-                        processRoute(transitMap, mode, startStop, endStop, timeNow, solution,
-                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, 0);
-                        processRoute(transitMap, mode, startStop, endStop, timeNow, solution,
-                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, 1);
+                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
+                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
                     }
                 }
             }
@@ -224,17 +222,18 @@ public class FinderCore {
         return connectedSolutions;
     }
 
-    private void processRoute(JSONObject transitMap, String mode, KdNode startStop, KdNode endStop, ZonedDateTime timeNow,
+    private void processRoute(JSONObject transitMap, String mode, KdNode NodeStart, JSONObject roadMap, KdNode startStop, KdNode endStop,
                               PossibleSolution solution, String route, Set<String> modeRoutesSet, JSONObject modeRoutes,
-                              List<Integer> validServiceIds, List<FoundSolution> connectedSolutions, int i) {
+                              List<Integer> validServiceIds, List<FoundSolution> connectedSolutions, Duration waitTimeOffset,
+                              int i) {
         String routeId = route + "_" + i;
-        addAllRouteDetails(transitMap, mode, startStop, endStop, timeNow, solution, route, modeRoutesSet, routeId,
-                modeRoutes, validServiceIds, connectedSolutions);
+        addAllRouteDetails(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution, route, modeRoutesSet, routeId, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset);
     }
 
-    private void addAllRouteDetails(JSONObject transitMap, String mode, KdNode startStop, KdNode endStop, ZonedDateTime timeNow,
-                                    PossibleSolution solution, String route, Set<String> modeRoutesSet, String routeId,
-                                    JSONObject modeRoutes, List<Integer> validServiceIds, List<FoundSolution> connectedSolutions) {
+    private void addAllRouteDetails(JSONObject transitMap, String mode, KdNode NodeStart, JSONObject roadMap,
+                                    KdNode startStop, KdNode endStop, PossibleSolution solution, String route,
+                                    Set<String> modeRoutesSet, String routeId, JSONObject modeRoutes, List<Integer> validServiceIds,
+                                    List<FoundSolution> connectedSolutions, Duration waitTimeOffset) {
         if (modeRoutesSet.contains(routeId)) {
             List<String> stopIds = getStopIds(modeRoutes, routeId);
             int startIndex = stopIds.indexOf(String.valueOf(solution.getStartNode().getNodeID()));
@@ -248,15 +247,14 @@ public class FinderCore {
                 currentServiceId = getCurrentServiceId(validServiceIds, modeRouteFromStopsSet, currentServiceId);
                 if (currentServiceId != 0) {
                     addRouteWaitTimes(transitMap, mode, connectedSolutions, startStop, endStop,
-                            timeNow, solution, route, currentServiceId, distance, routeId, trace,
-                            modeRouteFromStops);
+                            solution, route, currentServiceId, distance, routeId, trace,
+                            modeRouteFromStops, waitTimeOffset, NodeStart, roadMap);
                 } else {
                     logger.info("  {routeId}: No route found using service id");
                 }
             }
         }
     }
-
 
     private static Integer getCurrentServiceId(List<Integer> validServiceIds, Set<String> modeRouteFromStopsSet,
                                                Integer currentServiceId) {
@@ -308,16 +306,30 @@ public class FinderCore {
         return possibleSolutions;
     }
 
+    public Duration getWaitTimeInSeconds(double distance, String mode) {
+        double averageSpeed = Constants.AVERAGE_SPEEDS.get(mode);
+        double timeInHours = distance / averageSpeed;
+        long timeInSeconds = (long) (timeInHours * 3600);
+        return Duration.ofSeconds(timeInSeconds);
+    }
+
     private void addRouteWaitTimes(JSONObject transitMap, String mode, List<FoundSolution> connectedSolutions,
-                                   KdNode startStop, KdNode endStop, ZonedDateTime timeNow, PossibleSolution solution,
+                                   KdNode startStop, KdNode endStop, PossibleSolution solution,
                                    String route, Integer currentServiceId, double distance, String route1,
-                                   List<double[]> trace, JSONObject modeRouteFromStops) {
+                                   List<double[]> trace, JSONObject modeRouteFromStops, Duration  waitTimeOffset,
+                                   KdNode NodeStart, JSONObject roadMap) {
         List<Long> waitTimes = new ArrayList<>();
         JSONArray service = modeRouteFromStops.getJSONArray(String.valueOf(currentServiceId));
         List<LocalTime> vehicleTimeList = getVehicleLocalTimes(service);
-        LocalTime currentTime = timeNow.toLocalTime();
+        LocalTime currentTime = LocalTime.now(ZoneId.of("Europe/Dublin"));
+        List<double[]> shortestPathListStart = getShortestPathRoad(NodeStart, startStop, roadMap);
+        if(shortestPathListStart != null) {
+            double pathDistanceStart = getRouteDistance(shortestPathListStart);
+            waitTimeOffset = waitTimeOffset.plus(getWaitTimeInSeconds(pathDistanceStart, "walk"));
+        }
+        LocalTime timeAtStop = currentTime.plus(waitTimeOffset);
         for (LocalTime vehicleTime : vehicleTimeList) {
-            if (vehicleTime.isBefore(currentTime)) {
+            if (vehicleTime.isBefore(timeAtStop)) {
                 continue;
             }
 
