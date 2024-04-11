@@ -328,14 +328,11 @@ public class Query {
                                 combinedRoute.add(route);
                                 busSplitSols.add(combinedRoute);
                             }
-
                         } else {
                             k_sh *= 2;
                         }
                     }
-
                 }
-
             } else {
                 k_fh *= 2;
             }
@@ -367,7 +364,6 @@ public class Query {
                 k *= 2;
             }
         }
-
         sortSolsList(busSols);
         logger.info("-----------------------");
         return busSols.subList(0, Math.min(1, busSols.size()));

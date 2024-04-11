@@ -25,8 +25,6 @@ public class FinderCore {
 
     private final Map<String, CacheEntry<List<double[]>>> shortestPathCache = new HashMap<>();
 
-    private final Map<String, CacheEntry<Double>> harvesianCache = new HashMap<>();
-
     public FinderCore(){
         this.nodeCache = new KdNodeCache();
     }
