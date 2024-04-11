@@ -277,6 +277,7 @@ public class Query {
             logger.error("Error in getTransitRoutes MultiThreading Launching: " + e.getMessage());
         }
 
+
         try {
             luasSols = luasSolsFuture.get();
             busSols = busSolsFuture.get();
