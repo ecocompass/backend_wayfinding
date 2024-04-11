@@ -59,20 +59,14 @@ public class Main {
         return overpass.createTreeFromGraph("dart", gtfsResource, roadProcessedResource);
     }
 
-    @Bean(name = "kdTreeBike")
-    public KDTree kdTreeBike(Graph graph, Overpass overpass) throws IOException {
-        return overpass.createTreeFromGraph(graph,"bike");
-    }
-
     @Bean
     public Query query(@Qualifier("kdTreeRoad") KDTree kdTreeRoad,
                        @Qualifier("kdTreeBus") KDTree kdTreeBus,
                        @Qualifier("kdTreeLuas") KDTree kdTreeLuas,
                        @Qualifier("kdTreeDart") KDTree kdTreeDart,
-                       @Qualifier("kdTreeBike") KDTree kdTreeBike,
                        @Qualifier("gtfsFile") Resource gtfsResource,
                        @Qualifier("roadProcessedDataFile") Resource roadProcessedResource) throws IOException {
-        return new Query(kdTreeRoad, kdTreeBus, kdTreeLuas, kdTreeDart, kdTreeBike, gtfsResource, roadProcessedResource);
+        return new Query(kdTreeRoad, kdTreeBus, kdTreeLuas, kdTreeDart, gtfsResource, roadProcessedResource);
     }
 
     @Bean
