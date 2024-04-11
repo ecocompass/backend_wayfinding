@@ -214,9 +214,9 @@ public class FinderCore {
                 for (PossibleSolution solution : possibleSolutions) {
                     for (String route : solution.getTransitionSet()) {
                         processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
-                                    route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
+                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
                         processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
-                                    route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
+                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
                     }
                 }
             }

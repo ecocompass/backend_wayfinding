@@ -80,51 +80,78 @@ public class Query {
 
         TransitionRouteResponse transitionRouteResponse = new TransitionRouteResponse();
 
+
+        if(shortestDistance < 1L){
+            RecommendationPath recommendation = new RecommendationPath();
+            addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
+            transitionRouteResponse.addRecommendation(recommendation);
+
+            recommendation = new RecommendationPath();
+            addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "bike");
+            transitionRouteResponse.addRecommendation(recommendation);
+
+            recommendation = new RecommendationPath();
+            addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "car");
+            transitionRouteResponse.addRecommendation(recommendation);
+
+            return transitionRouteResponse;
+        }
+
         RecommendationPath recommendation = new RecommendationPath();
+
         if(shortestDistance < 3L) {
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
             transitionRouteResponse.addRecommendation(recommendation);
         }
 
-        recommendation = new RecommendationPath();
+        RecommendationPath luasrecommendation = new RecommendationPath();
         for(List<TransitRoute> busLuasRoute : transitionRoutes.get(0)) {
             if (Objects.equals(busLuasRoute.get(0).getMode(), "luas")) {
-                addPathModeWalkMode(busLuasRoute, 0, recommendation, true);
-                addPathModeRoute(busLuasRoute, 0, recommendation, "luas");
+                addPathModeWalkMode(busLuasRoute, 0, luasrecommendation, true);
+                addPathModeRoute(busLuasRoute, 0, luasrecommendation, "luas");
             } else {
-                addPathModeWalkMode(busLuasRoute, 0, recommendation, true);
-                addPathModeRoute(busLuasRoute, 0, recommendation, "bus");
-                addPathModeWalkNext(busLuasRoute, recommendation);
-                addPathModeRoute(busLuasRoute, 1, recommendation, "luas");
+                addPathModeWalkMode(busLuasRoute, 0, luasrecommendation, true);
+                addPathModeRoute(busLuasRoute, 0, luasrecommendation, "bus");
+                addPathModeWalkNext(busLuasRoute, luasrecommendation);
+                addPathModeRoute(busLuasRoute, 1, luasrecommendation, "luas");
             }
             int lastIndex = busLuasRoute.size() - 1;
             if (Objects.equals(busLuasRoute.get(lastIndex).getMode(), "luas")) {
-                addPathModeWalkMode(busLuasRoute, lastIndex, recommendation, false);
+                addPathModeWalkMode(busLuasRoute, lastIndex, luasrecommendation, false);
             } else {
-                addPathModeWalkMode(busLuasRoute, lastIndex, recommendation, true);
-                addPathModeRoute(busLuasRoute, lastIndex, recommendation, "bus");
-                addPathModeWalkMode(busLuasRoute, lastIndex, recommendation, false);
+                addPathModeWalkMode(busLuasRoute, lastIndex, luasrecommendation, true);
+                addPathModeRoute(busLuasRoute, lastIndex, luasrecommendation, "bus");
+                addPathModeWalkMode(busLuasRoute, lastIndex, luasrecommendation, false);
             }
         }
-        transitionRouteResponse.addRecommendation(recommendation);
+        List<PathWithMode> pathWithModeList = luasrecommendation.getModePathList();
+        if(shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+            transitionRouteResponse.addRecommendation(luasrecommendation);
+        }
 
-        recommendation = new RecommendationPath();
+        RecommendationPath busrecommendation = new RecommendationPath();
         for(List<TransitRoute> busRoute: transitionRoutes.get(1)){
-            addPathModeWalkMode(busRoute,0, recommendation, true);
-            addPathModeRoute(busRoute, 0, recommendation, "bus");
-            addPathModeWalkMode(busRoute, 0, recommendation, false);
+            addPathModeWalkMode(busRoute,0, busrecommendation, true);
+            addPathModeRoute(busRoute, 0, busrecommendation, "bus");
+            addPathModeWalkMode(busRoute, 0, busrecommendation, false);
         }
-        transitionRouteResponse.addRecommendation(recommendation);
+        pathWithModeList = busrecommendation.getModePathList();
+        if(shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+            transitionRouteResponse.addRecommendation(busrecommendation);
+        }
 
-        recommendation = new RecommendationPath();
+        RecommendationPath busSplitrecommendation = new RecommendationPath();
         for(List<TransitRoute> busRoute: transitionRoutes.get(2)){
-            addPathModeWalkMode(busRoute, 0, recommendation, true);
-            addPathModeRoute(busRoute, 0, recommendation, "bus");
-            addPathModeWalkNext(busRoute, recommendation);
-            addPathModeRoute(busRoute, 1, recommendation, "bus");
-            addPathModeWalkMode(busRoute, 1, recommendation, false);
+            addPathModeWalkMode(busRoute, 0, busSplitrecommendation, true);
+            addPathModeRoute(busRoute, 0, busSplitrecommendation, "bus");
+            addPathModeWalkNext(busRoute, busSplitrecommendation);
+            addPathModeRoute(busRoute, 1, busSplitrecommendation, "bus");
+            addPathModeWalkMode(busRoute, 1, busSplitrecommendation, false);
         }
-        transitionRouteResponse.addRecommendation(recommendation);
+        pathWithModeList = busSplitrecommendation.getModePathList();
+        if(shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+            transitionRouteResponse.addRecommendation(busSplitrecommendation);
+        }
 
         recommendation = new RecommendationPath();
         addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "car");
@@ -328,7 +355,9 @@ public class Query {
                         busSols.add(route);
                     }
                 }
-            } else {
+
+            }
+            if(busSols.isEmpty()){
                 k *= 2;
             }
         }
