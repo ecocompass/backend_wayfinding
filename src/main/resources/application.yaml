@@ -4,22 +4,7 @@ openweathermap:
     key: KEY
     host: 37.139.1.159 #api.openweathermap.org
 
-postgresql:
-  api:
-    host: IP
-    port: PORT
-    dbName: DBNAME
-    dbUserName: USERNAME
-    dbPassword: PASSWORD
-
 spring:
-  datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST_NAME:${postgresql.api.host}}:${POSTGRES_PORT:${postgresql.api.port}}/${POSTGRES_DB:${postgresql.api.dbName}}
-    username: ${POSTGRES_USER:${postgresql.api.dbUserName}}
-    password: ${POSTGRES_PASSWORD:${postgresql.api.dbPassword}}
-    driver-class-name: org.postgresql.Driver
-
-
   resources:
     gtfsFile: classpath:data/consolidated_gtfs.json
     queryDataFile: classpath:data/query_data.json
