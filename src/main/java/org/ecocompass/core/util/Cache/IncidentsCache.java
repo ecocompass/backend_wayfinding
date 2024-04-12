@@ -44,6 +44,18 @@ public class IncidentsCache {
         }
     }
 
+    public Map<String, Incident> getAllIncidentsWithKey() {
+        Map<String, Incident> incidentsWithKey = new HashMap<>();
+        for (Map.Entry<String, CacheEntry<Incident>> entry : incidentMap.entrySet()) {
+            String key = entry.getKey();
+            CacheEntry<Incident> cacheEntry = entry.getValue();
+            if (!cacheEntry.isExpired()) {
+                incidentsWithKey.put(key, cacheEntry.getData());
+            }
+        }
+        return incidentsWithKey;
+    }
+
     public void deleteIncident(String key) {
         incidentMap.remove(key);
     }

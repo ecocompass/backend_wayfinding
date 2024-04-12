@@ -25,18 +25,13 @@ public class RoutesController {
 
     private final Graph graph;
     private final Query query;
-    private final TrafficCheck trafficCheck;
     private final KDTree kdTreeRoad;
-    private final IncidentsCache incidentsCache;
 
     @Autowired
-    public RoutesController(Graph graph, Query query, TrafficCheck trafficCheck,
-                            IncidentsCache incidentsCache, @Qualifier("kdTreeRoad") KDTree kdTreeRoad) {
+    public RoutesController(Graph graph, Query query, @Qualifier("kdTreeRoad") KDTree kdTreeRoad) {
         this.graph = graph;
         this.query = query;
         this.kdTreeRoad = kdTreeRoad;
-        this.trafficCheck = trafficCheck;
-        this.incidentsCache = incidentsCache;
     }
 
     @GetMapping(value = "/api/routes", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -67,35 +62,6 @@ public class RoutesController {
         double[] endSwapped = {endCoordinates[1], endCoordinates[0]};
 
         return ResponseEntity.ok(query.getTransitRecommendations(startSwapped, endSwapped, graph));
-    }
-
-    @GetMapping(value = "/api/transit/incident", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TrafficResponse> getTrafficIncidents(
-            @RequestParam String recommendationId) {
-        TrafficResponse response = new TrafficResponse();
-        Incident incident = trafficCheck.getTransitReRoute(recommendationId);
-        if(incident != null) {
-            response.setReRoute(true);
-            response.setIncident(incident);
-        }
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/createIncident")
-    public ResponseEntity<String> createIncident(@RequestBody Incident incident) {
-        String incidentId = incidentsCache.generateUniqueKey();
-        incidentsCache.addIncident(incidentId, incident);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Incident "  + incidentId + " created successfully");
-    }
-
-    @DeleteMapping("/deleteIncident/{incidentId}")
-    public ResponseEntity<String> deleteIncident(@PathVariable String incidentId) {
-        if (incidentsCache.containsIncident(incidentId)) {
-            incidentsCache.deleteIncident(incidentId);
-            return ResponseEntity.status(HttpStatus.OK).body("Incident " + incidentId + " deleted successfully");
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Incident with ID " + incidentId + " not found");
-        }
     }
 
 }
