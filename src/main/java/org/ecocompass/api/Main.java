@@ -1,6 +1,7 @@
 package org.ecocompass.api;
 
 import org.ecocompass.core.K_DTree.KDTree;
+import org.ecocompass.core.PathFinder.FinderCore;
 import org.ecocompass.core.PathFinder.Query;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.overpass.Overpass;
@@ -20,11 +21,6 @@ public class Main {
 
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
-    }
-
-    @Bean
-    public Overpass overpass() {
-        return new Overpass();
     }
 
     @Bean
@@ -57,16 +53,6 @@ public class Main {
                              @Qualifier("gtfsFile") Resource gtfsResource,
                              @Qualifier("roadProcessedDataFile") Resource roadProcessedResource) throws IOException {
         return overpass.createTreeFromGraph("dart", gtfsResource, roadProcessedResource);
-    }
-
-    @Bean
-    public Query query(@Qualifier("kdTreeRoad") KDTree kdTreeRoad,
-                       @Qualifier("kdTreeBus") KDTree kdTreeBus,
-                       @Qualifier("kdTreeLuas") KDTree kdTreeLuas,
-                       @Qualifier("kdTreeDart") KDTree kdTreeDart,
-                       @Qualifier("gtfsFile") Resource gtfsResource,
-                       @Qualifier("roadProcessedDataFile") Resource roadProcessedResource) throws IOException {
-        return new Query(kdTreeRoad, kdTreeBus, kdTreeLuas, kdTreeDart, gtfsResource, roadProcessedResource);
     }
 
     @Bean

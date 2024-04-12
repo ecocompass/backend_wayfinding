@@ -2,8 +2,11 @@ package org.ecocompass.core.PathFinder;
 
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
+import org.ecocompass.core.Reroute.TrafficCheck;
 import org.ecocompass.core.graph.Node;
 import org.ecocompass.core.util.*;
+import org.ecocompass.core.util.Cache.CacheEntry;
+import org.ecocompass.core.util.Cache.KdNodeCache;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
@@ -20,27 +23,16 @@ public class FinderCore {
 
     @Autowired
     private KdNodeCache nodeCache;
-
+    private final TrafficCheck trafficCheck;
+    private final DistanceUtility distanceUtility;
     private static final Logger logger = LogManager.getLogger(FinderCore.class);
-
     private final Map<String, CacheEntry<List<double[]>>> shortestPathCache = new HashMap<>();
 
-    public FinderCore(){
+    @Autowired
+    public FinderCore(TrafficCheck trafficCheck){
+        this.trafficCheck = trafficCheck;
         this.nodeCache = new KdNodeCache();
-    }
-
-    public double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
-        double R = 6371.0;
-        lat1 = Math.toRadians(lat1);
-        lon1 = Math.toRadians(lon1);
-        lat2 = Math.toRadians(lat2);
-        lon2 = Math.toRadians(lon2);
-        double dLat = lat2 - lat1;
-        double dLon = lon2 - lon1;
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+        this.distanceUtility = new DistanceUtility();
     }
 
 
@@ -103,7 +95,7 @@ public class FinderCore {
         gScore.put(start.getNodeID(), 0.0);
 
         Map<String, Double> fScore = new HashMap<>();
-        fScore.put(start.getNodeID(), haversineDistance(start.getNode().latitude, start.getNode().longitude,
+        fScore.put(start.getNodeID(), distanceUtility.haversineDistance(start.getNode().latitude, start.getNode().longitude,
                 goal.getNode().latitude, goal.getNode().longitude));
 
         openSet.add(new NodeWrapper(0.0, start.getNodeID()));
@@ -135,12 +127,12 @@ public class FinderCore {
             for (String neighborID : currentNeighborsList) {
                 KdNode neighbourNode = getNodeFromID(neighborID, roadMap);
                 double tentativeGScore = gScore.getOrDefault(current.nodeID, Double.POSITIVE_INFINITY) +
-                        haversineDistance(startNode.getNode().latitude, startNode.getNode().longitude,
+                        distanceUtility.haversineDistance(startNode.getNode().latitude, startNode.getNode().longitude,
                                 neighbourNode.getNode().latitude, neighbourNode.getNode().longitude);
                 if (tentativeGScore < gScore.getOrDefault(neighborID, Double.POSITIVE_INFINITY)) {
                     cameFrom.put(neighborID, current.nodeID);
                     gScore.put(neighborID, tentativeGScore);
-                    fScore.put(neighborID, tentativeGScore + haversineDistance(neighbourNode.getNode().latitude,
+                    fScore.put(neighborID, tentativeGScore + distanceUtility.haversineDistance(neighbourNode.getNode().latitude,
                             neighbourNode.getNode().longitude, goal.getNode().latitude, goal.getNode().longitude));
 
                     openSet.add(new NodeWrapper(fScore.get(neighborID), neighborID));
@@ -156,7 +148,7 @@ public class FinderCore {
         int closestPointIndex = 0;
         for (int i = 0; i < route.size(); i++) {
             double[] routePoint = route.get(i);
-            double distance = haversineDistance(routePoint[0], routePoint[1], point[0], point[1]);
+            double distance = distanceUtility.haversineDistance(routePoint[0], routePoint[1], point[0], point[1]);
             if (distance < minDistance) {
                 minDistance = distance;
                 closestPointIndex = i;
@@ -359,15 +351,16 @@ public class FinderCore {
             trace.add(endStop.getCoordinates());
 
             distance+= getRouteDistance(trace);
-
-            FoundSolution foundSolution = new FoundSolution();
-            foundSolution.setPossibleSolution(solution);
-            foundSolution.setRoute(route);
-            foundSolution.setModeNumber(String.valueOf(currentServiceId));
-            foundSolution.setDistance(distance);
-            foundSolution.setTraceCoordinates(trace);
-            foundSolution.setWaitTime(nextThreeWaitTimes);
-            connectedSolutions.add(foundSolution);
+            if(trafficCheck.isIncidentOnPath(trace) == null) {
+                FoundSolution foundSolution = new FoundSolution();
+                foundSolution.setPossibleSolution(solution);
+                foundSolution.setRoute(route);
+                foundSolution.setModeNumber(String.valueOf(currentServiceId));
+                foundSolution.setDistance(distance);
+                foundSolution.setTraceCoordinates(trace);
+                foundSolution.setWaitTime(nextThreeWaitTimes);
+                connectedSolutions.add(foundSolution);
+            }
         }
     }
 
@@ -390,7 +383,7 @@ public class FinderCore {
         double[] prev = null;
         for (double[] coords : route) {
             if (prev != null) {
-                totalDistance += haversineDistance(coords[0], coords[1], prev[0], prev[1]);
+                totalDistance += distanceUtility.haversineDistance(coords[0], coords[1], prev[0], prev[1]);
             }
             prev = coords;
         }

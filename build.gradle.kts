@@ -24,6 +24,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.23.0")
     implementation("org.apache.commons:commons-math3:3.6.1")
     implementation("org.postgresql:postgresql:42.6.0")
+    implementation("org.apache.httpcomponents:httpclient:4.5.13")
     runtimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))

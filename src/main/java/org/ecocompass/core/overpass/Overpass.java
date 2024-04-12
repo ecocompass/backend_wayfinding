@@ -25,18 +25,23 @@ import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 
+@Component
 public class Overpass {
     private static final Logger logger = LogManager.getLogger(Overpass.class);
     private final String overpassUrl = "http://overpass-api.de/api/interpreter";
     private final HttpClient client;
     private final FinderCore finderCore;
 
-    public Overpass() {
+    @Autowired
+    public Overpass(FinderCore finderCore) {
         client = HttpClient.newHttpClient();
-        finderCore = new FinderCore();
+        this.finderCore = finderCore;
     }
+
     public String queryLocation(Map<String, String> geoMap) {
         String varsString = "";
         String geofilterString = "(way";

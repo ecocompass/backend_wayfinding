@@ -1,28 +1,27 @@
 package org.ecocompass.core.K_DTree;
+
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.ecocompass.core.PathFinder.FinderCore;
-import org.ecocompass.core.util.CacheEntry;
+import org.ecocompass.core.util.Cache.CacheEntry;
+import org.ecocompass.core.util.DistanceUtility;
 
 import java.util.*;
 
 public class KDTree {
     private static final Logger logger = LogManager.getLogger(KDTree.class);
 
-    private FinderCore finderCore;
-
     @Getter
     private final KdNode root;
     private final int k;
-
+    private final DistanceUtility distanceUtility;
     private final Map<String, CacheEntry<KdNode>> nodeCache;
 
     public KDTree(List<KdNode> nodes) {
         this.k = nodes.get(0).getCoordinates().length;
         this.root = buildTree(nodes, 0);
-        finderCore = new FinderCore();
         nodeCache = new HashMap<>();
+        this.distanceUtility = new DistanceUtility();
     }
 
     public KdNode getRoot(){
@@ -57,7 +56,7 @@ public class KDTree {
         int axis = depth % k;
         double distSq = 0.0;
         for (int i = 0; i < k; i++) {
-            distSq += finderCore.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
+            distSq += distanceUtility.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
         }
 
         // Update best neighbor if this node is closer
@@ -142,7 +141,7 @@ public class KDTree {
         }
 
         int axis = depth % this.k;
-        double distSq = finderCore.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
+        double distSq = distanceUtility.haversineDistance(point[0], point[1], node.getCoordinates()[0], node.getCoordinates()[1]);
 
         if (pq.size() < k) {
             pq.add(new NodeWithDistance(node, distSq));
