@@ -190,8 +190,7 @@ public class FinderCore {
         JSONObject modeRoutes = transitMap.getJSONObject(mode + "_routes");
         Set<String> modeRoutesSet = modeRoutes.keySet();
 
-        int numThreads = Runtime.getRuntime().availableProcessors();
-        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorService executorService = Executors.newCachedThreadPool();
 
         try {
             List<Future<?>> futures = new ArrayList<>();
@@ -261,7 +260,7 @@ public class FinderCore {
                             solution, route, currentServiceId, distance, routeId, trace,
                             modeRouteFromStops, waitTimeOffset, NodeStart, roadMap);
                 } else {
-                    logger.info(routeId + " : No route found using service id");
+                    logger.debug(routeId + " : No route found using service id");
                 }
             }
         }
