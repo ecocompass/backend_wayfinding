@@ -261,7 +261,7 @@ public class FinderCore {
                             solution, route, currentServiceId, distance, routeId, trace,
                             modeRouteFromStops, waitTimeOffset, NodeStart, roadMap);
                 } else {
-                    logger.info("  {routeId}: No route found using service id");
+                    logger.info(routeId + " : No route found using service id");
                 }
             }
         }
