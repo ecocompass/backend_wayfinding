@@ -62,7 +62,7 @@ public class Query {
         this.finderCore = finderCore;
         this.recommendationPathCache = recommendationPathCache;
         this.distanceUtility = new DistanceUtility();
-        transitRoutesCache = new HashMap<>();
+        transitRoutesCache = new ConcurrentHashMap<>();
     }
     
     public TransitionRouteResponse getTransitRecommendations(double[] start, double[] end, Graph graph) throws Exception {

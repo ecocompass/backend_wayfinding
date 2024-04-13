@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,7 +27,7 @@ public class FinderCore {
     private final TrafficCheck trafficCheck;
     private final DistanceUtility distanceUtility;
     private static final Logger logger = LogManager.getLogger(FinderCore.class);
-    private final Map<String, CacheEntry<List<double[]>>> shortestPathCache = new HashMap<>();
+    private final Map<String, CacheEntry<List<double[]>>> shortestPathCache = new ConcurrentHashMap<>();
 
     @Autowired
     public FinderCore(TrafficCheck trafficCheck){
@@ -185,33 +186,51 @@ public class FinderCore {
 
     public List<FoundSolution> getTransitRoutes(List<KdNode> nearestStopsStart, List<KdNode> nearestStopsEnd, JSONObject transitMap,
                                                 String mode, Long waitTime, KdNode NodeStart, JSONObject roadMap) {
-
         List<FoundSolution> connectedSolutions = new ArrayList<>();
         JSONObject modeRoutes = transitMap.getJSONObject(mode + "_routes");
         Set<String> modeRoutesSet = modeRoutes.keySet();
 
-        for (KdNode startStop : nearestStopsStart) {
-            for (KdNode endStop : nearestStopsEnd) {
-                Duration waitTimeOffset = Duration.ofSeconds(waitTime);
-                List<PossibleSolution> possibleSolutions = getPossibleSolutions(transitMap, mode, startStop, endStop);
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
 
-                ZoneId dublinZone = ZoneId.of("Europe/Dublin");
-                ZonedDateTime timeNow = ZonedDateTime.now(dublinZone);
-                DayOfWeek dayOfWeek = timeNow.getDayOfWeek();
-                int weekdayValue = dayOfWeek.getValue();
-
-                List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue-1);
-                for (PossibleSolution solution : possibleSolutions) {
-                    for (String route : solution.getTransitionSet()) {
-                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
-                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
-                        processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
-                                route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
-                    }
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (KdNode startStop : nearestStopsStart) {
+                for (KdNode endStop : nearestStopsEnd) {
+                    Future<?> future = executorService.submit(() -> addStartStopComboRoutes(transitMap, mode, waitTime,
+                            NodeStart, roadMap, startStop, endStop, modeRoutesSet, modeRoutes, connectedSolutions));
+                    futures.add(future);
                 }
             }
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error(e.getMessage());
+        } finally {
+            executorService.shutdown();
         }
         return connectedSolutions;
+    }
+
+    private void addStartStopComboRoutes(JSONObject transitMap, String mode, Long waitTime, KdNode NodeStart, JSONObject roadMap, KdNode startStop, KdNode endStop, Set<String> modeRoutesSet, JSONObject modeRoutes, List<FoundSolution> connectedSolutions) {
+        Duration waitTimeOffset = Duration.ofSeconds(waitTime);
+        List<PossibleSolution> possibleSolutions = getPossibleSolutions(transitMap, mode, startStop, endStop);
+
+        ZoneId dublinZone = ZoneId.of("Europe/Dublin");
+        ZonedDateTime timeNow = ZonedDateTime.now(dublinZone);
+        DayOfWeek dayOfWeek = timeNow.getDayOfWeek();
+        int weekdayValue = dayOfWeek.getValue();
+
+        List<Integer> validServiceIds = Constants.SERVICE_ID_MAPPINGS.get(mode).get(weekdayValue-1);
+        for (PossibleSolution solution : possibleSolutions) {
+            for (String route : solution.getTransitionSet()) {
+                processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                        route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 0);
+                processRoute(transitMap, mode, NodeStart, roadMap, startStop, endStop, solution,
+                        route, modeRoutesSet, modeRoutes, validServiceIds, connectedSolutions, waitTimeOffset, 1);
+            }
+        }
     }
 
     private void processRoute(JSONObject transitMap, String mode, KdNode NodeStart, JSONObject roadMap, KdNode startStop, KdNode endStop,
