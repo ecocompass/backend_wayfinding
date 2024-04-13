@@ -358,7 +358,7 @@ public class FinderCore {
                 trace, route1, distance, connectedSolutions);
     }
 
-    private void addConnectedSolutions(JSONObject transitMap, String mode, KdNode startStop, KdNode endStop,
+    private synchronized void addConnectedSolutions(JSONObject transitMap, String mode, KdNode startStop, KdNode endStop,
                                        PossibleSolution solution, String route, List<Long> nextThreeWaitTimes,
                                        Integer currentServiceId, List<double[]> trace, String route1, double distance,
                                        List<FoundSolution> connectedSolutions) {
