@@ -18,6 +18,8 @@ public class PathWithMode {
     private Long timeStamp;
     private List<double[]> pathPointList;
     private double distance;
+    private double caloriesBurned;
+    private double carbonEmissions;
 
     public PathWithMode(){
         this.mode = "";
@@ -27,7 +29,9 @@ public class PathWithMode {
         this.routeNumber = "";
         this.timeStamp = 0L;
         this.pathPointList = new ArrayList<>();
-        this.distance = 0;
+        this.distance = 0.0;
+        this.caloriesBurned = 0.0;
+        this.carbonEmissions = 0.0;
     }
 
     public void setMode(String mode){
@@ -47,6 +51,10 @@ public class PathWithMode {
     public void setPathPointList(List<double[]> pathPointList){this.pathPointList = pathPointList;}
 
     public void setDistance (double distance) {this.distance = distance;}
+
+    public void setCaloriesBurned(double caloriesBurned) {this.caloriesBurned = caloriesBurned;}
+
+    public void setCarbonEmissions(double carbonEmissions) {this.carbonEmissions = carbonEmissions;}
 
     public String getMode(){
         return this.mode;
@@ -69,5 +77,10 @@ public class PathWithMode {
     public double getDistance () {
         return this.distance;
     }
+
+    public double getCaloriesBurned() { return this.caloriesBurned;}
+
+    public double getCarbonEmissions() {return this.carbonEmissions;}
+
 }
 

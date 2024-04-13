@@ -8,7 +8,9 @@ public class Constants {
 
     public static final Map<String, Integer> AVERAGE_SPEEDS = Map.of(
             "walk", 4,
+            "bike", 12,
             "bus", 15,
+            "car", 15,
             "luas", 25,
             "dart", 60
     );
@@ -48,4 +50,23 @@ public class Constants {
             "dart", 5,
             "luas", 5
     );
+
+    public static final Map<String, Double> EMISSION_MAPPINGS = Map.of(
+        "walk", 0.0,   // Walking has negligible emissions
+        "bike", 0.0,   // Cycling has negligible emissions
+        "bus", 0.103,   // kg CO2 per km (estimated based on buses in other European cities)
+        "luas", 0.092, // kg CO2 per km (estimated based on trams in other European cities)
+        "dart", 0.045, // kg CO2 per km (estimated based on electric trains in other countries)
+        "car", 0.153   // kg CO2 per km (average car emission)
+    );
+
+    public static final Map<String, Double> CALORIES_MAPPINGS = Map.of(
+        "walk", 3.5,
+        "bike", 8.0,
+        "bus", 0.0,
+        "luas", 0.0,
+        "dart", 0.0,
+        "car", 0.0
+    );
+
 }
