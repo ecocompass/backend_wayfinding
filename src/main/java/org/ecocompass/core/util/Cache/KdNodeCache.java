@@ -1,4 +1,4 @@
-package org.ecocompass.core.util;
+package org.ecocompass.core.util.Cache;
 
 import org.ecocompass.core.K_DTree.KdNode;
 import org.springframework.stereotype.Component;

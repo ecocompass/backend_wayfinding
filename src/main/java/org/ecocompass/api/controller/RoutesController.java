@@ -1,19 +1,22 @@
 package org.ecocompass.api.controller;
 
 import org.ecocompass.api.response.ShortestPathResponse;
+import org.ecocompass.api.response.TrafficResponse;
 import org.ecocompass.api.response.TransitionRouteResponse;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.PathFinder.Query;
+import org.ecocompass.core.Reroute.Incident;
+import org.ecocompass.core.Reroute.TrafficCheck;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
+import org.ecocompass.core.util.Cache.IncidentsCache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -22,7 +25,6 @@ public class RoutesController {
 
     private final Graph graph;
     private final Query query;
-
     private final KDTree kdTreeRoad;
 
     @Autowired
@@ -61,4 +63,5 @@ public class RoutesController {
 
         return ResponseEntity.ok(query.getTransitRecommendations(startSwapped, endSwapped, graph));
     }
+
 }

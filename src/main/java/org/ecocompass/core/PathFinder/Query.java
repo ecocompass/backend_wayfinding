@@ -9,22 +9,25 @@ import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.graph.Graph;
 import org.ecocompass.core.graph.Node;
-import org.ecocompass.core.util.CacheEntry;
-import org.ecocompass.core.util.Constants;
-import org.ecocompass.core.util.FoundSolution;
-import org.ecocompass.core.util.TransitRoute;
+import org.ecocompass.core.util.*;
+import org.ecocompass.core.util.Cache.CacheEntry;
+import org.ecocompass.core.util.Cache.RecommendationsCache;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
 
+@Service
 public class Query {
 
     private final FinderCore finderCore;
+    private final DistanceUtility distanceUtility;
     private final KDTree kdTreeRoad;
     private final KDTree kdTreeBus;
     private final KDTree kdTreeLuas;
@@ -33,11 +36,14 @@ public class Query {
     private final JSONObject roadMap;
     private static final Logger logger = LogManager.getLogger(Query.class);
     private final Map<String, CacheEntry<List<TransitRoute>>> transitRoutesCache;
+    private final RecommendationsCache recommendationPathCache;
 
+    @Autowired
     public Query(@Qualifier("kdTreeRoad") KDTree kdTreeRoad,
                  @Qualifier("kdTreeBus") KDTree kdTreeBus, @Qualifier("kdTreeLuas") KDTree kdTreeLuas,
                  @Qualifier("kdTreeDart") KDTree kdTreeDart, @Qualifier("gtfsFile") Resource gtfsResource,
-                 @Qualifier("roadProcessedDataFile") Resource roadProcessedResource) throws IOException {
+                 @Qualifier("roadProcessedDataFile") Resource roadProcessedResource, FinderCore finderCore,
+                 RecommendationsCache recommendationPathCache) throws IOException {
         this.kdTreeRoad = kdTreeRoad;
         this.kdTreeBus = kdTreeBus;
         this.kdTreeLuas = kdTreeLuas;
@@ -53,11 +59,12 @@ public class Query {
             String roadData = new String(inputStream.readAllBytes());
             this.roadMap = new JSONObject(roadData);
         }
-
-        finderCore = new FinderCore();
+        this.finderCore = finderCore;
+        this.recommendationPathCache = recommendationPathCache;
+        this.distanceUtility = new DistanceUtility();
         transitRoutesCache = new HashMap<>();
     }
-
+    
     public TransitionRouteResponse getTransitRecommendations(double[] start, double[] end, Graph graph) throws Exception {
 
         ExecutorService executorService = Executors.newFixedThreadPool(3);
@@ -82,29 +89,33 @@ public class Query {
 
 
         if(shortestDistance < 1L){
-            RecommendationPath recommendation = new RecommendationPath();
+            RecommendationPath recommendation = new RecommendationPath(recommendationPathCache);
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
+            recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
             transitionRouteResponse.addRecommendation(recommendation);
 
-            recommendation = new RecommendationPath();
+            recommendation = new RecommendationPath(recommendationPathCache);
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "bike");
+            recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
             transitionRouteResponse.addRecommendation(recommendation);
 
-            recommendation = new RecommendationPath();
+            recommendation = new RecommendationPath(recommendationPathCache);
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "car");
+            recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
             transitionRouteResponse.addRecommendation(recommendation);
 
             return transitionRouteResponse;
         }
 
-        RecommendationPath recommendation = new RecommendationPath();
+        RecommendationPath recommendation = new RecommendationPath(recommendationPathCache);
 
         if(shortestDistance < 3L) {
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
+            recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
             transitionRouteResponse.addRecommendation(recommendation);
         }
 
-        RecommendationPath luasrecommendation = new RecommendationPath();
+        RecommendationPath luasrecommendation = new RecommendationPath(recommendationPathCache);
         for(List<TransitRoute> busLuasRoute : transitionRoutes.get(0)) {
             if (Objects.equals(busLuasRoute.get(0).getMode(), "luas")) {
                 addPathModeWalkMode(busLuasRoute, 0, luasrecommendation, true);
@@ -127,11 +138,12 @@ public class Query {
         List<PathWithMode> pathWithModeList = luasrecommendation.getModePathList();
         if (!pathWithModeList.isEmpty()) {
             if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                recommendationPathCache.put(luasrecommendation.getRecommendationId(), luasrecommendation);
                 transitionRouteResponse.addRecommendation(luasrecommendation);
             }
         }
 
-        RecommendationPath busrecommendation = new RecommendationPath();
+        RecommendationPath busrecommendation = new RecommendationPath(recommendationPathCache);
         for(List<TransitRoute> busRoute: transitionRoutes.get(1)){
             addPathModeWalkMode(busRoute,0, busrecommendation, true);
             addPathModeRoute(busRoute, 0, busrecommendation, "bus");
@@ -140,11 +152,12 @@ public class Query {
         pathWithModeList = busrecommendation.getModePathList();
         if (!pathWithModeList.isEmpty()) {
             if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                recommendationPathCache.put(busrecommendation.getRecommendationId(), busrecommendation);
                 transitionRouteResponse.addRecommendation(busrecommendation);
             }
         }
 
-        RecommendationPath busSplitrecommendation = new RecommendationPath();
+        RecommendationPath busSplitrecommendation = new RecommendationPath(recommendationPathCache);
         for(List<TransitRoute> busRoute: transitionRoutes.get(2)){
             addPathModeWalkMode(busRoute, 0, busSplitrecommendation, true);
             addPathModeRoute(busRoute, 0, busSplitrecommendation, "bus");
@@ -155,21 +168,25 @@ public class Query {
         pathWithModeList = busSplitrecommendation.getModePathList();
         if (!pathWithModeList.isEmpty()) {
             if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                recommendationPathCache.put(busSplitrecommendation.getRecommendationId(), busSplitrecommendation);
                 transitionRouteResponse.addRecommendation(busSplitrecommendation);
             }
         }
 
-        recommendation = new RecommendationPath();
+        recommendation = new RecommendationPath(recommendationPathCache);
         addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "car");
+        recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
         transitionRouteResponse.addRecommendation(recommendation);
 
-        recommendation = new RecommendationPath();
+        recommendation = new RecommendationPath(recommendationPathCache);
         addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "bike");
+        recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
         transitionRouteResponse.addRecommendation(recommendation);
 
         if(shortestDistance > 3L) {
-            recommendation = new RecommendationPath();
+            recommendation = new RecommendationPath(recommendationPathCache);
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
+            recommendationPathCache.put(recommendation.getRecommendationId(), recommendation);
             transitionRouteResponse.addRecommendation(recommendation);
         }
 
@@ -249,7 +266,7 @@ public class Query {
 
     public List<List<List<TransitRoute>>> getTransitRoutes(double[] start, double[] end) {
         logger.info("[Compute transit route from {} to {}]", Arrays.toString(start), Arrays.toString(end));
-        double straightLineDistance = finderCore.haversineDistance(start[0], start[1], end[0], end[1]);
+        double straightLineDistance = distanceUtility.haversineDistance(start[0], start[1], end[0], end[1]);
         logger.info("Straight Line distance: {} ", straightLineDistance);
 
         KdNode nodeStart = kdTreeRoad.findNode(start);
@@ -276,7 +293,6 @@ public class Query {
         } catch (Exception e) {
             logger.error("Error in getTransitRoutes MultiThreading Launching: " + e.getMessage());
         }
-
 
         try {
             luasSols = luasSolsFuture.get();

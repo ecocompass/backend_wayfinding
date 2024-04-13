@@ -1,4 +1,4 @@
-package org.ecocompass.core.util;
+package org.ecocompass.core.util.Cache;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
