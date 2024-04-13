@@ -10,7 +10,7 @@ public class Constants {
             "walk", 4,
             "bike", 12,
             "bus", 15,
-            "car", 15,
+            "car", 16,
             "luas", 25,
             "dart", 60
     );
