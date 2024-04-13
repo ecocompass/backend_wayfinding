@@ -91,7 +91,7 @@ public class Overpass {
             }
 
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             return null;
         }
     }
@@ -102,7 +102,7 @@ public class Overpass {
             writer.write(queryOutput);
             logger.info("Response body written to file: " + filePath);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
     }
 
