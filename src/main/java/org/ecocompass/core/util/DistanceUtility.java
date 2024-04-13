@@ -15,4 +15,16 @@ public class DistanceUtility {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
+
+    public static double getCaloriesBurned(double distance, String mode) {
+        double averageWeight = 89.2;
+        double duration = distance / Constants.AVERAGE_SPEEDS.get(mode) * 60;
+        double kcalPerMinute = Constants.CALORIES_MAPPINGS.get(mode) * averageWeight * 3.5 * Math.pow(10, -3);
+        return duration * kcalPerMinute;
+    }
+
+    public static double getCarbonEmissions(double distance, String mode) {
+        return distance * Constants.EMISSION_MAPPINGS.get(mode);
+    }
+
 }

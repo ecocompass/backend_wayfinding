@@ -87,7 +87,6 @@ public class Query {
 
         TransitionRouteResponse transitionRouteResponse = new TransitionRouteResponse();
 
-
         if(shortestDistance < 1L){
             RecommendationPath recommendation = new RecommendationPath(recommendationPathCache);
             addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "walk");
@@ -204,12 +203,15 @@ public class Query {
         path.setTimeStamp(0L);
         path.setPathPointList(shortestPathCoordinates);
         path.setDistance(shortestDistance);
+        path.setCaloriesBurned(DistanceUtility.getCaloriesBurned(shortestDistance, mode));
+        path.setCarbonEmissions(DistanceUtility.getCarbonEmissions(shortestDistance, mode));
         recommendation.addPath(path);
         recommendation.addTransition(mode);
     }
 
     private static void addPathModeRoute(List<TransitRoute> route, int lastIndex,
                                      RecommendationPath recommendation, String mode) {
+        double distance = route.get(lastIndex).getFoundSolution().getDistance();
         PathWithMode path = new PathWithMode();
         path.setMode(mode);
         path.setStartStopName(route.get(lastIndex).getFoundSolution().getPossibleSolution().getStartNode().getName());
@@ -218,7 +220,9 @@ public class Query {
         path.setRouteNumber(route.get(lastIndex).getFoundSolution().getRoute());
         path.setTimeStamp(route.get(lastIndex).getFoundSolution().getWaitTime().get(0));
         path.setPathPointList(swapCoordinates(route.get(lastIndex).getFoundSolution().getTraceCoordinates()));
-        path.setDistance(route.get(lastIndex).getFoundSolution().getDistance());
+        path.setDistance(distance);
+        path.setCaloriesBurned(DistanceUtility.getCaloriesBurned(distance, mode));
+        path.setCarbonEmissions(DistanceUtility.getCarbonEmissions(distance, mode));
         recommendation.addPath(path);
         recommendation.addTransition(mode);
     }
@@ -236,6 +240,8 @@ public class Query {
         walkPathNextStart.setMode("walk");
         walkPathNextStart.setPathPointList(swapCoordinates(walkPath));
         walkPathNextStart.setDistance(walkDistance);
+        walkPathNextStart.setCaloriesBurned(DistanceUtility.getCaloriesBurned(walkDistance, "walk"));
+        walkPathNextStart.setCarbonEmissions(DistanceUtility.getCarbonEmissions(walkDistance, "walk"));
         recommendation.addPath(walkPathNextStart);
         recommendation.addTransition("walk");
     }
@@ -247,9 +253,13 @@ public class Query {
         if(start) {
             walkPath.setPathPointList(swapCoordinates(route.get(lastIndex).getPathListStart()));
             walkPath.setDistance(route.get(lastIndex).getDistanceStart());
+            walkPath.setCaloriesBurned(DistanceUtility.getCaloriesBurned(route.get(lastIndex).getDistanceStart(), "walk"));
+            walkPath.setCarbonEmissions(DistanceUtility.getCarbonEmissions(route.get(lastIndex).getDistanceStart(), "walk"));
         } else {
             walkPath.setPathPointList(swapCoordinates(route.get(lastIndex).getPathListEnd()));
             walkPath.setDistance(route.get(lastIndex).getDistanceEnd());
+            walkPath.setCaloriesBurned(DistanceUtility.getCaloriesBurned(route.get(lastIndex).getDistanceEnd(), "walk"));
+            walkPath.setCarbonEmissions(DistanceUtility.getCarbonEmissions(route.get(lastIndex).getDistanceEnd(), "walk"));
         }
         recommendation.addPath(walkPath);
         recommendation.addTransition("walk");
