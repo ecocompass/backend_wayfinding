@@ -480,7 +480,6 @@ public class Query {
         }
     }
 
-
     public List<TransitRoute> getTransitRoutes(double[] start, double[] end, String mode, int k, Long waitTime) {
         logger.info(" *Transit route with mode {}*", mode);
         String cacheKey = Arrays.toString(start) + Arrays.toString(end) + mode + k;

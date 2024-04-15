@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ecocompass.api.utility.PathWithMode;
 import org.ecocompass.api.utility.RecommendationPath;
+import org.ecocompass.core.util.Cache.CacheEntry;
 import org.ecocompass.core.util.Cache.IncidentsCache;
 import org.ecocompass.core.util.Cache.RecommendationsCache;
 import org.ecocompass.core.util.DistanceUtility;
@@ -14,8 +15,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class TrafficCheck {
@@ -23,15 +23,23 @@ public class TrafficCheck {
     private final RecommendationsCache recommendationsCache;
     private final IncidentsCache incidentsCache;
 
+    private Map<String, CacheEntry<List<Incident>>> incidentsCacheRealTime;
+
     private static final Logger logger = LoggerFactory.getLogger(TrafficCheck.class);
 
     @Autowired
     public TrafficCheck(RecommendationsCache recommendationsCache, IncidentsCache incidentsCache){
         this.recommendationsCache = recommendationsCache;
         this.incidentsCache = incidentsCache;
+        this.incidentsCacheRealTime = new HashMap<>();
     }
 
     public List<Incident> getIncidents(double[] start, double[] end) {
+        String cacheKey = Arrays.toString(start) + Arrays.toString(end);
+        CacheEntry<List<Incident>> cacheEntry = incidentsCacheRealTime.get(cacheKey);
+        if (cacheEntry != null && !cacheEntry.isExpired()) {
+            return cacheEntry.getData();
+        }
         List<Incident> incidents = new ArrayList<>();
         double southLat = Math.min(start[0], end[0]);
         double westLon = Math.min(start[1], end[1]);
@@ -85,6 +93,7 @@ public class TrafficCheck {
         } else {
             logger.error("Failed to get the response or received non-OK status code");
         }
+        incidentsCacheRealTime.put(cacheKey, new CacheEntry<>(incidents, 1));
         return incidents;
     }
 
