@@ -328,28 +328,33 @@ public class Query {
         logger.info("[Middle point between {} and {}]", Arrays.toString(start), Arrays.toString(end));
         double[] midStop = roadRouteStartEnd.get(roadRouteStartEnd.size() / 2);
         int k_fh = Constants.K_NEAREST_MAPPINGS.get("bus");
-        List<TransitRoute> firstHalves = new ArrayList<>();
-        while(firstHalves.isEmpty() && k_fh <= 60){
+        List<TransitRoute> firstHalves;
+
+        while (busSplitSols.isEmpty() && k_fh <= 60) {
             logger.info("------------------ BUS SPLIT FH -----------------------");
             Long waitTime = 0L;
-            firstHalves= getTransitRoutes(start, midStop, "bus", k_fh, waitTime);
-            if(!firstHalves.isEmpty()){
+            firstHalves = getTransitRoutes(start, midStop, "bus", k_fh, waitTime);
+
+            if (!firstHalves.isEmpty()) {
                 logger.info("First halves original (will considered best 5): {}", firstHalves.size());
                 sortSolList(firstHalves);
                 firstHalves = firstHalves.subList(0, Math.min(5, firstHalves.size()));
 
-                for(TransitRoute busRoute: firstHalves){
+                for (TransitRoute busRoute : firstHalves) {
                     double[] endStop = busRoute.getFoundSolution().getPossibleSolution().getEndNode().getCoordinates();
                     List<TransitRoute> secondHalves = new ArrayList<>();
                     int k_sh = Constants.K_NEAREST_MAPPINGS.get("bus");
-                    while(secondHalves.isEmpty() && k_sh <= 60){
+
+                    while (secondHalves.isEmpty() && k_sh <= 60) {
                         logger.info("------------------ BUS SPLIT SH -----------------------");
                         waitTime = updateWaitTime(waitTime, firstHalves);
                         secondHalves = getTransitRoutes(endStop, end, "bus", k_sh, waitTime);
-                        if(!secondHalves.isEmpty()) {
+
+                        if (!secondHalves.isEmpty()) {
                             logger.info("Second halves original (will considered best 5): {}", firstHalves.size());
                             sortSolList(secondHalves);
-                            for(TransitRoute route: secondHalves){
+
+                            for (TransitRoute route : secondHalves) {
                                 List<TransitRoute> combinedRoute = new ArrayList<>();
                                 combinedRoute.add(busRoute);
                                 combinedRoute.add(route);
