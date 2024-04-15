@@ -190,14 +190,24 @@ public class FinderCore {
         JSONObject modeRoutes = transitMap.getJSONObject(mode + "_routes");
         Set<String> modeRoutesSet = modeRoutes.keySet();
 
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
         try {
+            List<Future<?>> futures = new ArrayList<>();
             for (KdNode startStop : nearestStopsStart) {
                 for (KdNode endStop : nearestStopsEnd) {
-                    addStartStopComboRoutes(transitMap, mode, waitTime, NodeStart, roadMap, startStop, endStop, modeRoutesSet, modeRoutes, connectedSolutions);
+                    Future<?> future = executorService.submit(() -> addStartStopComboRoutes(transitMap, mode, waitTime,
+                            NodeStart, roadMap, startStop, endStop, modeRoutesSet, modeRoutes, connectedSolutions));
+                    futures.add(future);
                 }
             }
-        } catch (Exception e) {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
             logger.error(e.getMessage());
+        } finally {
+            executorService.shutdown();
         }
         return connectedSolutions;
     }
