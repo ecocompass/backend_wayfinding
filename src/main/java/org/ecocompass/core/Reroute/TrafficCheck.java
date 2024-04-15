@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ecocompass.api.utility.PathWithMode;
 import org.ecocompass.api.utility.RecommendationPath;
-import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.util.Cache.CacheEntry;
 import org.ecocompass.core.util.Cache.IncidentsCache;
 import org.ecocompass.core.util.Cache.RecommendationsCache;
