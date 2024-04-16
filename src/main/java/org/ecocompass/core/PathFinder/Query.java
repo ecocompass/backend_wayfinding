@@ -418,16 +418,16 @@ public class Query {
                     luasRoute.getDistanceStart(), luasRoute.getDistanceEnd());
             List<TransitRoute> luasSol = new ArrayList<>();
             List<TransitRoute> busSol = new ArrayList<>();
-            waitTime = luasRoute.getFoundSolution().getWaitTime().get(0);
             List<TransitRoute> busRoutes = getTransitRoutes(start,
                     luasRoute.getFoundSolution().getPossibleSolution().getStartNode().getCoordinates(), "bus", 0, waitTime);
-            updateLuasSol(busRoutes, luasRoute.getDistanceStart(), busSol, luasSol);
+            updateLuasSol(busRoutes, luasRoute.getDistanceStart(), busSol, luasSol, luasRoute, true);
             luasSol.add(luasRoute);
 
+            waitTime = luasRoute.getFoundSolution().getWaitTime().get(0);
             busSol = new ArrayList<>();
             busRoutes = getTransitRoutes(luasRoute.getFoundSolution().getPossibleSolution().getEndNode().getCoordinates(),
                     end, "bus",0, waitTime);
-            updateLuasSol(busRoutes, luasRoute.getDistanceEnd(), busSol, luasSol);
+            updateLuasSol(busRoutes, luasRoute.getDistanceEnd(), busSol, luasSol, luasRoute, false);
             luasSols.add(luasSol);
         }
         sortSolsList(luasSols);
@@ -435,11 +435,11 @@ public class Query {
         return luasSols.subList(0, Math.min(1, luasSols.size()));
     }
 
-    private static void updateLuasSol(List<TransitRoute> busRoutes, double luasRoute, List<TransitRoute> busSol,
-                                      List<TransitRoute> luasSol) {
+    private static void updateLuasSol(List<TransitRoute> busRoutes, double luasDistance, List<TransitRoute> busSol,
+                                      List<TransitRoute> luasSol, TransitRoute luasRoute, boolean addTimeOffset) {
         if (!busRoutes.isEmpty()) {
             for (TransitRoute busRoute : busRoutes) {
-                if (busRoute.getDistanceStart() + busRoute.getDistanceEnd() < luasRoute - 0.5) {
+                if (busRoute.getDistanceStart() + busRoute.getDistanceEnd() < luasDistance - 0.5) {
                     logger.info("    Label: {}\\n    Route length: {}\\n    Wait time: \"\n" +
                                     "                      f\"{}\\n    Start offset: {}\"\n" +
                                     "                      f\"\\n    End offset: {}\\n", busRoute.getFoundSolution().getRoute(),
@@ -452,6 +452,9 @@ public class Query {
         if (!busSol.isEmpty()) {
             sortSolList(busSol);
             luasSol.add(busSol.get(0));
+            if(addTimeOffset) {
+                luasRoute.getFoundSolution().addWaitTimeOffset(busSol.get(0).getFoundSolution().getWaitTime().get(0));
+            }
         }
     }
 
