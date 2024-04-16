@@ -63,6 +63,10 @@ public class FoundSolution {
         return this.waitTime;
     }
 
+    public void addWaitTimeOffset(Long timeOffset){
+        this.waitTime.replaceAll(aLong -> aLong + timeOffset);
+    }
+
     public Set<Traffic> getTraffic() { return this.traffic; }
 
     public void setPossibleSolution(PossibleSolution possibleSolution){
