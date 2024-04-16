@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ecocompass.api.utility.PathWithMode;
 import org.ecocompass.api.utility.RecommendationPath;
+import org.ecocompass.api.utility.Traffic;
 import org.ecocompass.core.util.Cache.CacheEntry;
 import org.ecocompass.core.util.Cache.IncidentsCache;
 import org.ecocompass.core.util.Cache.RecommendationsCache;
 import org.ecocompass.core.util.DistanceUtility;
+import org.ecocompass.core.util.FoundSolution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,19 +99,23 @@ public class TrafficCheck {
         return incidents;
     }
 
-    public Incident isIncidentOnPath(List<double[]> pathCoordinates){
+    public Incident isIncidentOnPath(List<double[]> pathCoordinates, FoundSolution foundSolution){
         List<Incident> incidents = incidentsCache.getAllIncidents();
         incidents.addAll(getIncidents(pathCoordinates.get(0), pathCoordinates.get(pathCoordinates.size()-1)));
         for(double[] pathCoordinate : pathCoordinates){
             for(Incident incident: incidents){
-                if(incident.getRoadClosed() || incident.getIsJamcident()) {
-                    double incidentLat = incident.getCoordinates()[0];
-                    double incidentLon = incident.getCoordinates()[1];
-                    double pointLat = pathCoordinate[0];
-                    double pointLon = pathCoordinate[1];
-                    DistanceUtility distanceUtility = new DistanceUtility();
-                    double incidenceDistance = distanceUtility.haversineDistance(incidentLat, incidentLon, pointLat, pointLon);
-                    if (incidenceDistance < 0.1) {
+                double incidentLat = incident.getCoordinates()[0];
+                double incidentLon = incident.getCoordinates()[1];
+                double pointLat = pathCoordinate[0];
+                double pointLon = pathCoordinate[1];
+                DistanceUtility distanceUtility = new DistanceUtility();
+                double incidenceDistance = distanceUtility.haversineDistance(incidentLat, incidentLon, pointLat, pointLon);
+                if (incidenceDistance < 0.1) {
+                    if (incident.getIsJamcident()) {
+                        foundSolution.addTraffic(new Traffic(swapCoordinates(pathCoordinate),
+                                swapCoordinates(incident.getCoordinates()), incident.getDescription()));
+                    }
+                    if (incident.getRoadClosed()) {
                         return incident;
                     }
                 }
@@ -127,6 +133,17 @@ public class TrafficCheck {
         return swappedCoordinates;
     }
 
+    public static double[] swapCoordinates(double[] coordinates) {
+        if (coordinates.length != 2) {
+            throw new IllegalArgumentException("Coordinates array must contain exactly 2 elements (latitude and longitude)");
+        }
+
+        double[] swappedCoordinates = new double[2];
+        swappedCoordinates[0] = coordinates[1];
+        swappedCoordinates[1] = coordinates[0];
+        return swappedCoordinates;
+    }
+
     public Incident getTransitReRoute(String recommendationId) {
         RecommendationPath recommendationPath = recommendationsCache.get(recommendationId);
         if(recommendationPath != null) {
@@ -135,7 +152,7 @@ public class TrafficCheck {
                 pathCoordinates.addAll(pathWithMode.getPathPointList());
                 pathCoordinates = swapCoordinates(pathCoordinates);
             }
-            return isIncidentOnPath(pathCoordinates);
+            return isIncidentOnPath(pathCoordinates, new FoundSolution());
         }
         logger.info("Recommendation Not Found in Cache!");
         return null;

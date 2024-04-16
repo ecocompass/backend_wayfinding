@@ -369,8 +369,8 @@ public class FinderCore {
             trace.add(endStop.getCoordinates());
 
             distance+= getRouteDistance(trace);
-            if(trafficCheck.isIncidentOnPath(trace) == null) {
-                FoundSolution foundSolution = new FoundSolution();
+            FoundSolution foundSolution = new FoundSolution();
+            if(trafficCheck.isIncidentOnPath(trace, foundSolution) == null) {
                 foundSolution.setPossibleSolution(solution);
                 foundSolution.setRoute(route);
                 foundSolution.setModeNumber(String.valueOf(currentServiceId));
