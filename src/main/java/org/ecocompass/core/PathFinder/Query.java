@@ -367,7 +367,8 @@ public class Query {
                         }
                     }
                 }
-            } else {
+            }
+            if(busSplitSols.isEmpty()) {
                 k_fh *= 2;
             }
         }
