@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Service
 public class Query {
@@ -209,7 +210,7 @@ public class Query {
         recommendation.addTransition(mode);
     }
 
-    private static void addPathModeRoute(List<TransitRoute> route, int lastIndex,
+    private void addPathModeRoute(List<TransitRoute> route, int lastIndex,
                                      RecommendationPath recommendation, String mode) {
         double distance = route.get(lastIndex).getFoundSolution().getDistance();
         PathWithMode path = new PathWithMode();
@@ -225,6 +226,7 @@ public class Query {
         path.setCarbonEmissions(DistanceUtility.getCarbonEmissions(distance, mode));
         recommendation.addPath(path);
         recommendation.addTransition(mode);
+        recommendation.setTraffic(new ArrayList<>(route.get(lastIndex).getFoundSolution().getTraffic()));
     }
 
 

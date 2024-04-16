@@ -3,7 +3,6 @@ package org.ecocompass.api.utility;
 import lombok.Getter;
 import lombok.Setter;
 import org.ecocompass.core.util.Cache.RecommendationsCache;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -22,12 +21,14 @@ public class RecommendationPath {
     private String recommendationId;
     private String transitions;
     private List<PathWithMode> modePathList;
+    private List<Traffic> traffic;
 
     public RecommendationPath(RecommendationsCache recommendationsCache) {
         this.modePathList = new ArrayList<>();
         this.transitions = "-";
         this.recommendationsCache = recommendationsCache;
         this.recommendationId = generateUniqueId(10);
+        this.traffic = new ArrayList<>();
     }
 
     public String generateUniqueId(int length) {
@@ -51,6 +52,8 @@ public class RecommendationPath {
         this.transitions += mode + "-";
     }
 
+    public void setTraffic(List<Traffic> traffic) { this.traffic = traffic; }
+
     public List<PathWithMode> getModePathList(){
         return this.modePathList;
     }
@@ -58,5 +61,7 @@ public class RecommendationPath {
     public String getTransitions() { return this.transitions; }
 
     public String getRecommendationId() { return this.recommendationId; }
+
+    public List<Traffic> getTraffic() { return this.traffic; }
 
 }

@@ -2,9 +2,12 @@ package org.ecocompass.core.util;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.ecocompass.api.utility.Traffic;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -15,16 +18,7 @@ public class FoundSolution {
     private double distance;
     private List<double[]> traceCoordinates;
     private List<Long> waitTime;
-
-    public FoundSolution(PossibleSolution solution, String route, String modeNumber,
-                         double distance, List<double[]> trace, List<Long> waitTime) {
-        this.possibleSolution = solution;
-        this.route = route;
-        this.modeNumber = modeNumber;
-        this.distance = distance;
-        this.traceCoordinates = trace;
-        this.waitTime = waitTime;
-    }
+    private Set<Traffic> traffic;
 
     public FoundSolution() {
         this.possibleSolution = new PossibleSolution();
@@ -33,6 +27,16 @@ public class FoundSolution {
         this.distance = 0;
         this.traceCoordinates = new ArrayList<>();
         this.waitTime = new ArrayList<>();
+        this.traffic = new HashSet<>();
+    }
+
+    public void addTraffic(Traffic traffic) {
+        for(Traffic addedtraffic: this.traffic){
+            if(addedtraffic.equals(traffic)){
+                return;
+            }
+        }
+        this.traffic.add(traffic);
     }
 
     public double getDistance(){
@@ -59,6 +63,8 @@ public class FoundSolution {
         return this.waitTime;
     }
 
+    public Set<Traffic> getTraffic() { return this.traffic; }
+
     public void setPossibleSolution(PossibleSolution possibleSolution){
         this.possibleSolution = possibleSolution;
     }
@@ -80,5 +86,7 @@ public class FoundSolution {
     public void setWaitTime(List<Long> waitTime) {
         this.waitTime = waitTime;
     }
+
+    public void setTraffic(Set<Traffic> traffic) { this.traffic = traffic; }
 
 }
