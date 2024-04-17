@@ -95,7 +95,7 @@ public class TrafficCheck {
         } else {
             logger.error("Failed to get the response or received non-OK status code");
         }
-        incidentsCacheRealTime.put(cacheKey, new CacheEntry<>(incidents, 1));
+        incidentsCacheRealTime.put(cacheKey, new CacheEntry<>(incidents, 10));
         return incidents;
     }
 

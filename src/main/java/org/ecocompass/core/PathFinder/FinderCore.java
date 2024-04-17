@@ -332,11 +332,11 @@ public class FinderCore {
         JSONArray service = modeRouteFromStops.getJSONArray(String.valueOf(currentServiceId));
         List<LocalTime> vehicleTimeList = getVehicleLocalTimes(service);
         LocalTime currentTime = LocalTime.now(ZoneId.of("Europe/Dublin"));
-        List<double[]> shortestPathListStart = getShortestPathRoad(NodeStart, startStop, roadMap);
-        if(shortestPathListStart != null) {
-            double pathDistanceStart = getRouteDistance(shortestPathListStart);
-            waitTimeOffset = waitTimeOffset.plus(getWaitTimeInSeconds(pathDistanceStart, "walk"));
-        }
+        //List<double[]> shortestPathListStart = getShortestPathRoad(NodeStart, startStop, roadMap);
+        //if(shortestPathListStart != null) {
+        //    double pathDistanceStart = getRouteDistance(shortestPathListStart);
+        //    waitTimeOffset = waitTimeOffset.plus(getWaitTimeInSeconds(pathDistanceStart, "walk"));
+        //}
         LocalTime timeAtStop = currentTime.plus(waitTimeOffset);
         for (LocalTime vehicleTime : vehicleTimeList) {
             if (vehicleTime.isBefore(timeAtStop)) {
