@@ -101,7 +101,7 @@ public class TrafficCheck {
 
     public Incident isIncidentOnPath(List<double[]> pathCoordinates, FoundSolution foundSolution){
         List<Incident> incidents = incidentsCache.getAllIncidents();
-        incidents.addAll(getIncidents(pathCoordinates.get(0), pathCoordinates.get(pathCoordinates.size()-1)));
+        //incidents.addAll(getIncidents(pathCoordinates.get(0), pathCoordinates.get(pathCoordinates.size()-1)));
         for(double[] pathCoordinate : pathCoordinates){
             for(Incident incident: incidents){
                 double incidentLat = incident.getCoordinates()[0];
