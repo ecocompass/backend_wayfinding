@@ -517,8 +517,8 @@ public class Query {
             throw new IllegalArgumentException("Invalid mode: " + mode);
         }
 
-        List<KdNode> nearestStopsStart = finderCore.getNearestNodes(treeRef, start, k);
-        List<KdNode> nearestStopsEnd = finderCore.getNearestNodes(treeRef, end, k);
+        List<KdNode> nearestStopsStart = finderCore.getNearestNodes(treeRef, mode, start, k);
+        List<KdNode> nearestStopsEnd = finderCore.getNearestNodes(treeRef, mode, end, k);
         List<FoundSolution> transitRoutes = finderCore.getTransitRoutes(nearestStopsStart, nearestStopsEnd, transitMap,
                                                                             mode, waitTime, NodeStart, roadMap);
 

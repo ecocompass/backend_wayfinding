@@ -1,5 +1,7 @@
 package org.ecocompass.core.PathFinder;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ecocompass.core.K_DTree.KDTree;
 import org.ecocompass.core.K_DTree.KdNode;
 import org.ecocompass.core.Reroute.TrafficCheck;
@@ -12,7 +14,9 @@ import org.json.JSONObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.*;
 import java.util.*;
@@ -35,7 +39,40 @@ public class FinderCore {
         this.nodeCache = new KdNodeCache();
         this.distanceUtility = new DistanceUtility();
     }
+    public static JSONArray convertNodesToJSONArray(List<double[]> nodes) {
+        JSONArray nodesArray = new JSONArray();
+        for (double[] node : nodes) {
+            JSONArray nodeArray = new JSONArray();
+            nodeArray.put(node[0]);
+            nodeArray.put(node[1]);
+            nodesArray.put(nodeArray);
+        }
+        return nodesArray;
+    }
 
+    public static void makeTreeFlask(JSONObject payload) {
+        try {
+            String url = "http://prod.ecocompass.live/api/kdtree";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            RestTemplate restTemplate = new RestTemplate();
+            HttpEntity<String> request = new HttpEntity<>(payload.toString(), headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+            logger.info("Response: " + response.getBody());
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+        }
+    }
+
+    public void buildKDTreeFlask(String mode, List<double[]> nodesFlask){
+        if (Objects.equals(mode, "bus") || Objects.equals(mode, "luas")) {
+            String map_key = mode + "_map";
+            JSONObject payload = new JSONObject();
+            payload.put(map_key, convertNodesToJSONArray(nodesFlask));
+            makeTreeFlask(payload);
+        }
+    }
 
     public KDTree buildKDTree(JSONObject jsonObject, String mode) {
         List<KdNode> nodes = new ArrayList<>();
@@ -64,13 +101,39 @@ public class FinderCore {
         return new KdNode(coordinates, id, node, name);
     }
 
-    public List<KdNode> getNearestNodes(KDTree tree, double[] point, int k) {
-        PriorityQueue<KDTree.NodeWithDistance> pq = tree.kNearestNeighbors(tree.getRoot(), point, 0, k, new PriorityQueue<>());
-        List<KdNode> neighbors = new ArrayList<>();
-        for (KDTree.NodeWithDistance nwd : pq) {
-            neighbors.add(nwd.node);
+    public static List<KdNode> getNearestNodesFlask(String mode, double[] point, int k) {
+        try {
+            String url = "http://prod.ecocompass.live/api/get_nearest_nodes?k=" + k +
+                    "&lat=" + point[0] + "&lon=" + point[1] + "&mode=" + mode;
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(response.getBody());
+            JsonNode nearestNodesNode = rootNode.path("nearest_nodes");
+
+            List<KdNode> nearestNodes = new ArrayList<>();
+            for (JsonNode node : nearestNodesNode) {
+                double lat = node.get("lat").asDouble();
+                double lon = node.get("lon").asDouble();
+                String nodeId = node.get("stop_id").asText();
+                String nodeName = node.get("name").asText();
+                double[] coordinates = {lat, lon};
+                Node graphNode = new Node(lat, lon);
+                KdNode kdNode = new KdNode(coordinates, nodeId, graphNode, nodeName);
+                nearestNodes.add(kdNode);
+            }
+
+            return nearestNodes;
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+            return new ArrayList<>();
         }
-        return neighbors;
+    }
+
+    public List<KdNode> getNearestNodes(KDTree tree, String mode, double[] point, int k) {
+        return getNearestNodesFlask(mode, point, k);
     }
 
     private KdNode getNodeFromID(String id, JSONObject roadMap) {
