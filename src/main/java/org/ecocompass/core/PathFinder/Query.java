@@ -80,7 +80,6 @@ public class Query {
         Future<List<Node>> shortestPathFuture = executorService.submit(shortestPathTask);
 
         Map<String, List<List<TransitRoute>>> transitionRoutes = transitRoutesFuture.get();
-        System.out.println(transitionRoutes);
         List<Node> shortestPathNodes = shortestPathFuture.get();
 
         List<double[]> shortestPathCoordinates = graph.extractCoordinates(shortestPathNodes);
