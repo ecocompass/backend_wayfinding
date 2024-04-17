@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 @Service
 public class Query {
@@ -70,17 +69,18 @@ public class Query {
 
         ExecutorService executorService = Executors.newFixedThreadPool(3);
 
-        Callable<List<List<List<TransitRoute>>>> transitRoutesTask = () -> getTransitRoutes(start, end);
+        Callable<Map<String, List<List<TransitRoute>>>> transitRoutesTask = () -> getTransitRoutes(start, end);
         Callable<List<Node>> shortestPathTask = () -> {
             KdNode startNode = kdTreeRoad.findNode(start);
             KdNode endNode = kdTreeRoad.findNode(end);
             return graph.shortestPath(startNode.getNodeID(), endNode.getNodeID(), "road");
         };
 
-        Future<List<List<List<TransitRoute>>>> transitRoutesFuture = executorService.submit(transitRoutesTask);
+        Future<Map<String, List<List<TransitRoute>>>> transitRoutesFuture = executorService.submit(transitRoutesTask);
         Future<List<Node>> shortestPathFuture = executorService.submit(shortestPathTask);
 
-        List<List<List<TransitRoute>>> transitionRoutes = transitRoutesFuture.get();
+        Map<String, List<List<TransitRoute>>> transitionRoutes = transitRoutesFuture.get();
+        System.out.println(transitionRoutes);
         List<Node> shortestPathNodes = shortestPathFuture.get();
 
         List<double[]> shortestPathCoordinates = graph.extractCoordinates(shortestPathNodes);
@@ -115,8 +115,8 @@ public class Query {
             transitionRouteResponse.addRecommendation(recommendation);
         }
 
-        RecommendationPath luasrecommendation = new RecommendationPath(recommendationPathCache);
-        for(List<TransitRoute> busLuasRoute : transitionRoutes.get(0)) {
+        for(List<TransitRoute> busLuasRoute : transitionRoutes.get("luas")) {
+            RecommendationPath luasrecommendation = new RecommendationPath(recommendationPathCache);
             if (Objects.equals(busLuasRoute.get(0).getMode(), "luas")) {
                 addPathModeWalkMode(busLuasRoute, 0, luasrecommendation, true);
                 addPathModeRoute(busLuasRoute, 0, luasrecommendation, "luas");
@@ -134,44 +134,50 @@ public class Query {
                 addPathModeRoute(busLuasRoute, lastIndex, luasrecommendation, "bus");
                 addPathModeWalkMode(busLuasRoute, lastIndex, luasrecommendation, false);
             }
-        }
-        List<PathWithMode> pathWithModeList = luasrecommendation.getModePathList();
-        if (!pathWithModeList.isEmpty()) {
-            if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
-                recommendationPathCache.put(luasrecommendation.getRecommendationId(), luasrecommendation);
-                transitionRouteResponse.addRecommendation(luasrecommendation);
+
+            List<PathWithMode> pathWithModeList = luasrecommendation.getModePathList();
+            if (!pathWithModeList.isEmpty()) {
+                if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                    recommendationPathCache.put(luasrecommendation.getRecommendationId(), luasrecommendation);
+                    transitionRouteResponse.addRecommendation(luasrecommendation);
+                }
             }
         }
 
-        RecommendationPath busrecommendation = new RecommendationPath(recommendationPathCache);
-        for(List<TransitRoute> busRoute: transitionRoutes.get(1)){
+        for(List<TransitRoute> busRoute: transitionRoutes.get("bus")){
+            RecommendationPath busrecommendation = new RecommendationPath(recommendationPathCache);
+
             addPathModeWalkMode(busRoute,0, busrecommendation, true);
             addPathModeRoute(busRoute, 0, busrecommendation, "bus");
             addPathModeWalkMode(busRoute, 0, busrecommendation, false);
-        }
-        pathWithModeList = busrecommendation.getModePathList();
-        if (!pathWithModeList.isEmpty()) {
-            if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
-                recommendationPathCache.put(busrecommendation.getRecommendationId(), busrecommendation);
-                transitionRouteResponse.addRecommendation(busrecommendation);
+
+            List<PathWithMode> pathWithModeList = busrecommendation.getModePathList();
+            if (!pathWithModeList.isEmpty()) {
+                if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                    recommendationPathCache.put(busrecommendation.getRecommendationId(), busrecommendation);
+                    transitionRouteResponse.addRecommendation(busrecommendation);
+                }
             }
         }
 
-        RecommendationPath busSplitrecommendation = new RecommendationPath(recommendationPathCache);
-        for(List<TransitRoute> busRoute: transitionRoutes.get(2)){
+        for(List<TransitRoute> busRoute: transitionRoutes.get("busSplits")){
+            RecommendationPath busSplitrecommendation = new RecommendationPath(recommendationPathCache);
+
             addPathModeWalkMode(busRoute, 0, busSplitrecommendation, true);
             addPathModeRoute(busRoute, 0, busSplitrecommendation, "bus");
             addPathModeWalkNext(busRoute, busSplitrecommendation);
             addPathModeRoute(busRoute, 1, busSplitrecommendation, "bus");
             addPathModeWalkMode(busRoute, 1, busSplitrecommendation, false);
-        }
-        pathWithModeList = busSplitrecommendation.getModePathList();
-        if (!pathWithModeList.isEmpty()) {
-            if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
-                recommendationPathCache.put(busSplitrecommendation.getRecommendationId(), busSplitrecommendation);
-                transitionRouteResponse.addRecommendation(busSplitrecommendation);
+
+            List<PathWithMode> pathWithModeList = busSplitrecommendation.getModePathList();
+            if (!pathWithModeList.isEmpty()) {
+                if (shortestDistance > pathWithModeList.get(pathWithModeList.size() - 1).getDistance()) {
+                    recommendationPathCache.put(busSplitrecommendation.getRecommendationId(), busSplitrecommendation);
+                    transitionRouteResponse.addRecommendation(busSplitrecommendation);
+                }
             }
         }
+
 
         recommendation = new RecommendationPath(recommendationPathCache);
         addPathModeRoutsRoad(recommendation, shortestPathCoordinates, shortestDistance, "car");
@@ -276,7 +282,7 @@ public class Query {
         return swappedCoordinates;
     }
 
-    public List<List<List<TransitRoute>>> getTransitRoutes(double[] start, double[] end) {
+    public Map<String, List<List<TransitRoute>>> getTransitRoutes(double[] start, double[] end) {
         logger.info("[Compute transit route from {} to {}]", Arrays.toString(start), Arrays.toString(end));
         double straightLineDistance = distanceUtility.haversineDistance(start[0], start[1], end[0], end[1]);
         logger.info("Straight Line distance: {} ", straightLineDistance);
@@ -291,7 +297,7 @@ public class Query {
         List<List<TransitRoute>> luasSols = new ArrayList<>();
         List<List<TransitRoute>> busSols = new ArrayList<>();
         List<List<TransitRoute>> busSplitSols = new ArrayList<>();
-        List<List<List<TransitRoute>>> result = new ArrayList<>();
+        Map<String, List<List<TransitRoute>>> result = new HashMap<>();
 
         CompletableFuture<List<List<TransitRoute>>> luasSolsFuture =
                 CompletableFuture.supplyAsync(() -> getLuasSols(start, end));
@@ -314,9 +320,9 @@ public class Query {
             logger.error("Error in getTransitRoutes MultiThreading Collecting: " + e.getMessage());
         }
 
-        result.add(luasSols);
-        result.add(busSols);
-        result.add(busSplitSols);
+        result.put("luas", luasSols);
+        result.put("bus", busSols);
+        result.put("busSplits", busSplitSols);
         return result;
     }
 
@@ -374,7 +380,7 @@ public class Query {
         }
 
         sortSolsList(busSplitSols);
-        return busSplitSols.subList(0, Math.min(1, busSplitSols.size()));
+        return busSplitSols.subList(0, Math.min(3, busSplitSols.size()));
     }
 
     private List<List<TransitRoute>> getBusSols(double[] start, double[] end, double directRoadDistance) {
@@ -401,7 +407,7 @@ public class Query {
         }
         sortSolsList(busSols);
         logger.info("-----------------------");
-        return busSols.subList(0, Math.min(1, busSols.size()));
+        return busSols.subList(0, Math.min(3, busSols.size()));
     }
 
     private List<List<TransitRoute>> getLuasSols(double[] start, double[] end) {
@@ -432,7 +438,7 @@ public class Query {
         }
         sortSolsList(luasSols);
         logger.info("-----------------------------------------");
-        return luasSols.subList(0, Math.min(1, luasSols.size()));
+        return luasSols.subList(0, Math.min(3, luasSols.size()));
     }
 
     private static void updateLuasSol(List<TransitRoute> busRoutes, double luasDistance, List<TransitRoute> busSol,
@@ -461,10 +467,10 @@ public class Query {
     private static void sortSolList(List<TransitRoute> busSol) {
         if(!busSol.isEmpty()){
             busSol.sort((route1, route2) -> {
-                double distance1 = route1.getFoundSolution().getDistance() +
+                double distance1 = //route1.getFoundSolution().getDistance() +
                         route1.getDistanceStart() +
                         route1.getDistanceEnd();
-                double distance2 = route2.getFoundSolution().getDistance() +
+                double distance2 = //route2.getFoundSolution().getDistance() +
                         route2.getDistanceStart() +
                         route2.getDistanceEnd();
                 return Double.compare(distance1, distance2);
@@ -476,7 +482,7 @@ public class Query {
         if(!busSols.isEmpty()){
             busSols.sort(Comparator.comparingDouble(list -> {
                 if (list.size() >= 2) {
-                    return list.get(0).getFoundSolution().getDistance() + list.get(1).getFoundSolution().getDistance() +
+                    return //list.get(0).getFoundSolution().getDistance() + list.get(1).getFoundSolution().getDistance() +
                             list.get(0).getDistanceStart() + list.get(1).getDistanceStart() +
                             list.get(0).getDistanceEnd() + list.get(1).getDistanceEnd();
                 } else {
