@@ -6,6 +6,9 @@
 
 ### Project Overview
 
+![image](https://github.com/ecocompass/backend_wayfinding/assets/22334352/1f5a543a-9f9e-4ac9-8d21-d18f802db1a3)
+
+
 #### IncidentsController
 
 This controller manages traffic incidents.
